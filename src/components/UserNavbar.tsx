@@ -37,7 +37,7 @@ export default function UserNavbar() {
           </button>
           <button
             onClick={handleLogout}
-            className="text-sm font-semibold text-purple-700 hover:text-purple-800 transition"
+            className="text-sm font-semibold not-only:bg-pink-800 px-4 cursor-pointer py-2 rounded text-white transition"
           >
             Logout
           </button>

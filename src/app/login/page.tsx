@@ -2,7 +2,7 @@
 
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -17,7 +17,7 @@ import { Star, Heart, Smile } from "lucide-react";
 
 export default function UserLoginPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,11 @@ export default function UserLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  if (user) router.push("/");
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/");
+    }
+  }, [authLoading, user, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
