@@ -17,7 +17,7 @@ import {
 
 export default function UserDashboard() {
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 overflow-hidden">
+    <main className="relative min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 overflow-hidden pt-24">
       {/* === FLOATING ICONS LEFT === */}
       <div className="absolute left-10 top-32 animate-bounce-slow pointer-events-none">
         <Star className="text-yellow-400 w-10 h-10 opacity-90" />

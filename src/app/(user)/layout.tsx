@@ -13,11 +13,11 @@ export default function UserLayout({
   useUserGuard();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200">
+    <div className="relative min-h-screen">
       <div className="fixed inset-x-0 top-0 z-50 bg-transparent">
         <UserNavbar />
       </div>
-      <div className="pt-20">{children}</div>
+      {children}
     </div>
   );
 }
