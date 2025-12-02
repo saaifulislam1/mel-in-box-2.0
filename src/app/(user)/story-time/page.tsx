@@ -10,6 +10,7 @@ import {
   type VideoData,
 } from "@/lib/videoService";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/Spinner";
 
 type VideoItem = VideoData & {
   id: string;
@@ -78,38 +79,32 @@ export default function StoryTimePage() {
       <BookOpen className="absolute right-4 top-13 w-5 h-5 text-emerald-600" />
       {/* decorative accents */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%)] pointer-events-none" />
-      <div className="relative max-w-5xl mx-auto pt-6">
-        <button
-          onClick={() => router.push("/")}
-          className="absolute left-0 top-0 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-slate-700 border border-emerald-100 shadow-sm hover:shadow transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back Home
-        </button>
-
-        <div className="flex items-center justify-center gap-2 mb-8 pt-2">
-          <PlayCircle className="w-6 h-6 text-emerald-600" />
-          <h1 className="text-2xl font-semibold text-emerald-700">
-            Story Time
-          </h1>
+      <div className="relative max-w-5xl mx-auto pt-5 px-3 sm:px-4 space-y-6">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-emerald-700 font-semibold text-base sm:text-lg">
+            <PlayCircle className="w-5 h-5" />
+            <span className="font-semibold whitespace-nowrap">Story Time</span>
+          </div>
         </div>
 
         {loading && (
-          <p className="text-center text-slate-600">Loading videos...</p>
+          <div className="flex justify-center py-4">
+            <Spinner label="Loading videos..." className="text-emerald-700" />
+          </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-5 pb-4">
           {videos.map((v) => (
             <button
               key={v.id}
               onClick={() => openVideo(v)}
               className="w-full bg-white/90 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col sm:flex-row gap-3 overflow-hidden border border-emerald-50 text-left"
             >
-              <div className="relative w-full sm:w-44 h-36 sm:h-32 shrink-0">
+              <div className="relative w-full sm:w-44 h-44 sm:h-32 shrink-0">
                 <img
                   src={v.thumbnailURL}
                   alt={v.title}
-                  className="w-[106px] h-full rounded-xl object-cover p-2"
+                  className="w-full h-full rounded-xl object-cover p-2"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="bg-black/45 rounded-full p-2.5">
