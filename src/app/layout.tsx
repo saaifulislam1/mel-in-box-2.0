@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         {/* AuthProvider is client-side, but layout can render it */}
         <AuthProvider>{children}</AuthProvider>
       </body>

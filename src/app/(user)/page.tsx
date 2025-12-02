@@ -19,11 +19,11 @@ export default function UserDashboard() {
   return (
     <main className="relative min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 overflow-hidden pt-24">
       {/* === FLOATING ICONS LEFT === */}
-      <div className="absolute left-10 top-32 animate-bounce-slow pointer-events-none">
+      <div className="absolute left-10 top-38 animate-bounce-slow pointer-events-none">
         <Star className="text-yellow-400 w-10 h-10 opacity-90" />
       </div>
 
-      <div className="absolute left-8 bottom-20 animate-bounce-slow-2 pointer-events-none">
+      <div className="absolute left-8 bottom-12 animate-bounce-slow-2 pointer-events-none">
         <Smile className="text-blue-400 w-10 h-10 opacity-90" />
       </div>
 
@@ -32,7 +32,7 @@ export default function UserDashboard() {
         <Heart className="text-pink-400 w-8 h-8 opacity-90" />
       </div>
 
-      <div className="absolute right-14 bottom-32 animate-bounce-slow pointer-events-none">
+      <div className="absolute right-14 bottom-10 animate-bounce-slow pointer-events-none">
         <Star className="text-purple-400 w-8 h-8 opacity-90" />
       </div>
 
@@ -87,9 +87,9 @@ export default function UserDashboard() {
           }
         `}
       </style>
-      <div className="w-full flex justify-center align-middle  mt-8 mb-[90px] ">
+      <div className="w-full flex justify-center align-middle  mt-8 mb-[90px] px-4 ">
         {" "}
-        <div className=" flex   align-middle  justify-center bg-white w-[390px] rounded-xl h-[200px] flex-col space-y-3">
+        <div className="flex px-2  align-middle  justify-center bg-white w-[390px] rounded-xl h-[200px] flex-col space-y-3">
           <img
             src="images/mel-logo.png"
             alt="Mel In a Box Logo"

@@ -130,6 +130,7 @@ export default function GalleryPage() {
     const currentlyLoved = likedMap[photoId] ?? current?.loved ?? false;
     const delta = currentlyLoved ? -1 : 1;
 
+    const previousPhotos = photos;
     setPhotos((prev) =>
       prev.map((p) =>
         p.id === photoId
@@ -162,6 +163,11 @@ export default function GalleryPage() {
         await updatePhotoLikes(photoId, delta);
       } catch (err) {
         console.error("Failed to update likes", err);
+        // rollback on failure to keep counts accurate
+        setPhotos(previousPhotos);
+        const rolledBackLiked = { ...nextLiked, [photoId]: currentlyLoved };
+        setLikedMap(rolledBackLiked);
+        persistLikes(rolledBackLiked);
       }
     }
   };
@@ -306,7 +312,7 @@ export default function GalleryPage() {
                 </div>
               </div>
 
-              <div className="px-4 pb-4 flex items-center gap-2 text-slate-600">
+              <div className="px-1 pb-4 flex items-center gap-2 text-slate-600">
                 <button
                   onClick={() => toggleLove(photo.id)}
                   className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-slate-50 text-slate-700 hover:bg-sky-50 transition"
@@ -319,11 +325,11 @@ export default function GalleryPage() {
                   />
                   <span className="text-sm font-medium">{photo.likes}</span>
                 </button>
-                {typeof photo.downloads === "number" && (
+                {/* {typeof photo.downloads === "number" && (
                   <span className="text-xs text-slate-500">
                     {photo.downloads} downloads
                   </span>
-                )}
+                )} */}
               </div>
             </article>
           ))}

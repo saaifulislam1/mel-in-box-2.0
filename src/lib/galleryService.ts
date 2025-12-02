@@ -62,3 +62,7 @@ export async function updatePhotoLikes(id: string, delta: number) {
     likes: increment(delta),
   });
 }
+
+export async function updatePhoto(id: string, data: Partial<PhotoData>) {
+  await updateDoc(photoDoc(id), data);
+}
