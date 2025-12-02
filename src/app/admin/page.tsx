@@ -11,6 +11,7 @@ import {
   Film,
   Images,
   LogOut,
+  PartyPopper,
   ShieldCheck,
   Sparkles,
   Upload,
@@ -89,6 +90,13 @@ export default function AdminDashboard() {
             icon: <Upload className="w-5 h-5" />,
             href: "/admin/gallery/upload",
             accent: "from-fuchsia-500/90 to-pink-400/80",
+          },
+          {
+            title: "Kid Parties",
+            desc: "Create, edit, and track party packages.",
+            icon: <PartyPopper className="w-5 h-5" />,
+            href: "/admin/parties",
+            accent: "from-purple-500/90 to-sky-500/80",
           },
         ].map((item) => (
           <Link
