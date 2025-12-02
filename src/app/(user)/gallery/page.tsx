@@ -158,17 +158,15 @@ export default function GalleryPage() {
     setLikedMap(nextLiked);
     persistLikes(nextLiked);
 
-    if (delta !== 0) {
-      try {
-        await updatePhotoLikes(photoId, delta);
-      } catch (err) {
-        console.error("Failed to update likes", err);
-        // rollback on failure to keep counts accurate
-        setPhotos(previousPhotos);
-        const rolledBackLiked = { ...nextLiked, [photoId]: currentlyLoved };
-        setLikedMap(rolledBackLiked);
-        persistLikes(rolledBackLiked);
-      }
+    try {
+      await updatePhotoLikes(photoId, delta);
+    } catch (err) {
+      console.error("Failed to update likes", err);
+      // rollback on failure to keep counts accurate
+      setPhotos(previousPhotos);
+      const rolledBackLiked = { ...nextLiked, [photoId]: currentlyLoved };
+      setLikedMap(rolledBackLiked);
+      persistLikes(rolledBackLiked);
     }
   };
 
