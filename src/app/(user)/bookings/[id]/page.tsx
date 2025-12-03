@@ -15,10 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  getPartyBooking,
-  type PartyBooking,
-} from "@/lib/partyService";
+import { getPartyBooking, type PartyBooking } from "@/lib/partyService";
 
 type BookingRow = PartyBooking & { id: string };
 
@@ -74,7 +71,7 @@ export default function UserBookingDetail({
 
   if (authLoading || loading) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10">
+      <main className="max-w-4xl mx-auto px-4 py-10 pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
         <Spinner label="Loading booking..." />
       </main>
     );
@@ -82,7 +79,7 @@ export default function UserBookingDetail({
 
   if (!booking) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4 pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
         <div className="flex items-center gap-2 text-slate-800">
           <CalendarClock className="w-5 h-5 text-amber-600" />
           <h1 className="text-2xl font-semibold">Booking</h1>
@@ -103,7 +100,7 @@ export default function UserBookingDetail({
 
   if (user?.email && booking.email && booking.email !== user.email) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4 pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
         <div className="flex items-center gap-2 text-slate-800">
           <CalendarClock className="w-5 h-5 text-amber-600" />
           <h1 className="text-2xl font-semibold">Booking</h1>
@@ -116,7 +113,7 @@ export default function UserBookingDetail({
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+    <main className="max-w-4xl mx-auto px-4 py-10  mt-20 space-y-6 pt-20 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
       <div className="flex items-center gap-2 text-slate-800">
         <CalendarClock className="w-5 h-5 text-amber-600" />
         <h1 className="text-2xl font-semibold">Booking</h1>
@@ -179,12 +176,12 @@ export default function UserBookingDetail({
             <p className="text-sm text-slate-700">
               Amount: ${booking.amountPaid ?? booking.packagePrice ?? 0}
             </p>
-            {booking.stripeSessionId && (
+            {/* {booking.stripeSessionId && (
               <p className="text-xs text-slate-500">
                 Session:{" "}
                 <span className="font-mono">{booking.stripeSessionId}</span>
               </p>
-            )}
+            )} */}
             {booking.paymentIntentId && (
               <p className="text-xs text-slate-500">
                 Payment intent:{" "}

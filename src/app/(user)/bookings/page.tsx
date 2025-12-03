@@ -51,7 +51,6 @@ export default function UserBookingsPage() {
       setLoading(true);
       try {
         const data = await getPartyBookingsForEmail(user.email);
-        console.log(data);
         setBookings(data as BookingRow[]);
       } catch (err) {
         console.error("Failed to load user bookings", err);
@@ -70,7 +69,7 @@ export default function UserBookingsPage() {
 
   if (authLoading) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10">
+      <main className="max-w-4xl mx-auto px-4 py-10 pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
         <Spinner label="Checking account..." />
       </main>
     );
@@ -78,7 +77,7 @@ export default function UserBookingsPage() {
 
   if (!user?.email) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4 pt-[300px]">
+      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4 pt-24 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
         <div className="flex items-center gap-2 text-slate-800">
           <CalendarClock className="w-5 h-5 text-amber-600" />
           <h1 className="text-2xl font-semibold">Your bookings</h1>
@@ -98,7 +97,7 @@ export default function UserBookingsPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+    <main className="max-w-4xl mx-auto px-4 py-10 pt-24 mt-20 space-y-6 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-slate-800">
           <CalendarClock className="w-5 h-5 text-amber-600" />
