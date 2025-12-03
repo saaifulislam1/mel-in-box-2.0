@@ -31,7 +31,8 @@ export async function POST(request: Request) {
       location,
       mapLink,
       notes,
-      email,
+      email: ownerEmail,
+      contactEmail,
       phone,
     } = body;
 
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
       location: location || "",
       mapLink,
       notes,
-      email: email?.toLowerCase(),
+      email: ownerEmail?.toLowerCase(),
+      contactEmail: contactEmail?.toLowerCase(),
       phone,
       status: "pending_payment",
     });
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
         bookingId: bookingRef.id,
         packageId,
       },
-      customer_email: email,
+      customer_email: contactEmail || ownerEmail,
     });
 
     await updatePartyBooking(bookingRef.id, {

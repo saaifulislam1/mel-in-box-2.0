@@ -36,6 +36,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [unreadBookings, setUnreadBookings] = useState(0);
   const [open, setOpen] = useState(false);
+  const isAuthPage = pathname?.startsWith("/admin/login");
 
   const navItems: NavItem[] = useMemo(
     () => [
@@ -95,8 +96,12 @@ export default function AdminLayout({
     const loadUnread = async () => {
       try {
         const bookings = await getAllPartyBookings();
-        const unread = bookings.filter((b: { read?: boolean }) => !b.read)
-          .length;
+        const unread = bookings.filter(
+          (b: { read?: boolean; status?: string }) =>
+            !b.read &&
+            b.status !== "canceled" &&
+            b.status !== "completed"
+        ).length;
         setUnreadBookings(unread);
       } catch (err) {
         console.error("Unable to load bookings", err);
@@ -105,6 +110,17 @@ export default function AdminLayout({
 
     loadUnread();
   }, []);
+
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.2),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.18),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.15),transparent_30%)] pointer-events-none" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative">

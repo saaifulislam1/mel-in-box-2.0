@@ -58,6 +58,7 @@ export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -161,6 +162,7 @@ export default function AdminBookingsPage() {
       console.error("Failed to cancel booking", err);
       await loadBookings();
     } finally {
+      setConfirmId(null);
       setActionId(null);
     }
   };
@@ -267,6 +269,12 @@ export default function AdminBookingsPage() {
                       {b.email}
                     </>
                   )}
+                  {b.contactEmail && b.contactEmail !== b.email && (
+                    <>
+                      <Mail className="w-4 h-4 text-rose-300" />
+                      Contact: {b.contactEmail}
+                    </>
+                  )}
                   {b.phone && (
                     <>
                       <Phone className="w-4 h-4 text-emerald-300" />
@@ -283,7 +291,12 @@ export default function AdminBookingsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => updateStatus(b.id, "accepted")}
-                    disabled={actionId === b.id || b.status === "canceled"}
+                    disabled={
+                      actionId === b.id ||
+                      b.status === "canceled" ||
+                      b.status === "accepted" ||
+                      b.status === "completed"
+                    }
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
                   >
                     {actionId === b.id ? (
@@ -295,14 +308,18 @@ export default function AdminBookingsPage() {
                   </button>
                   <button
                     onClick={() => updateStatus(b.id, "completed")}
-                    disabled={actionId === b.id || b.status === "canceled"}
+                    disabled={
+                      actionId === b.id ||
+                      b.status === "canceled" ||
+                      b.status === "completed"
+                    }
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
                   >
                     <CheckSquare className="w-4 h-4" />
                     Mark complete
                   </button>
                   <button
-            onClick={() => cancelWithRefund(b.id)}
+                    onClick={() => setConfirmId(b.id)}
                     disabled={actionId === b.id || b.status === "canceled"}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20 hover:bg-white/15 transition disabled:opacity-60"
                   >
@@ -346,6 +363,42 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       </section>
+
+      {confirmId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 text-white shadow-2xl p-5 space-y-4">
+            <div className="space-y-1">
+              <p className="text-lg font-semibold">Cancel and refund?</p>
+              <p className="text-sm text-slate-300">
+                This will cancel the booking and issue a full refund to the
+                customer.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-slate-100 hover:bg-white/15 transition"
+              >
+                Keep booking
+              </button>
+              <button
+                onClick={() => cancelWithRefund(confirmId)}
+                disabled={actionId === confirmId}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {actionId === confirmId ? (
+                  <Spinner label="Canceling..." />
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4" />
+                    Yes, cancel & refund
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

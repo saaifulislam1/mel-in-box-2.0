@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getPartyPackage } from "@/lib/partyService";
 import { Spinner } from "@/components/Spinner";
 import { ArrowLeft, CalendarClock, MapPin, Users, CreditCard } from "lucide-react";
+import { useAuth } from "@/app/AuthProvider";
 
 type PackageData = {
   id: string;
@@ -22,6 +23,7 @@ export default function BookPartyPage() {
   const router = useRouter();
   const params = useParams();
   const packageId = params?.id as string;
+  const { user } = useAuth();
 
   const [pkg, setPkg] = useState<PackageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export default function BookPartyPage() {
   const [location, setLocation] = useState("");
   const [mapLink, setMapLink] = useState("");
   const [notes, setNotes] = useState("");
-  const [email, setEmail] = useState("");
+  const [contactEmail, setContactEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
@@ -59,6 +61,10 @@ export default function BookPartyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pkg) return;
+    if (!user?.email) {
+      setError("Please sign in to book a party.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -75,7 +81,8 @@ export default function BookPartyPage() {
           location,
           mapLink,
           notes,
-          email,
+          email: user.email,
+          contactEmail,
           phone,
         }),
       });
@@ -209,12 +216,13 @@ export default function BookPartyPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-slate-600">Contact email</label>
+                  <label className="text-sm text-slate-600">
+                    Contact email (optional)
+                  </label>
                   <input
                     type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-300"
                     placeholder="you@example.com"
                   />

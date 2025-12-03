@@ -39,7 +39,8 @@ export type PartyBooking = {
   location: string;
   mapLink?: string;
   notes?: string;
-  email?: string;
+  email?: string; // owner email (logged-in user)
+  contactEmail?: string; // contact email from form
   phone?: string;
   status?:
     | "pending_payment"
@@ -109,9 +110,14 @@ export async function getPartyBooking(id: string) {
 export async function createPartyBooking(data: PartyBooking) {
   const normalizedEmail =
     typeof data.email === "string" ? data.email.toLowerCase() : data.email;
+  const normalizedContact =
+    typeof data.contactEmail === "string"
+      ? data.contactEmail.toLowerCase()
+      : data.contactEmail;
   return await addDoc(bookingsCol, {
     ...data,
     email: normalizedEmail,
+    contactEmail: normalizedContact,
     status: data.status ?? "pending_payment",
     read: data.read ?? false,
     amountPaid: data.amountPaid ?? 0,

@@ -62,6 +62,7 @@ export default function BookingDetails({
   const [booking, setBooking] = useState<BookingRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const { id } = React.use(params);
 
   const load = async () => {
@@ -119,6 +120,7 @@ export default function BookingDetails({
 
   const cancelWithRefund = async () => {
     if (!booking) return;
+    setConfirming(true);
     setActionId(booking.id);
     try {
       const res = await fetch("/api/bookings/cancel", {
@@ -140,6 +142,7 @@ export default function BookingDetails({
       console.error("Failed to cancel booking", err);
       load();
     } finally {
+      setConfirming(false);
       setActionId(null);
     }
   };
@@ -152,7 +155,10 @@ export default function BookingDetails({
     return "Not recorded";
   }, [booking]);
 
-  const isCanceled = booking?.status === "canceled" && Boolean(booking.refundId);
+  const isCanceled =
+    booking?.status === "canceled" && Boolean(booking.refundId);
+  const isAccepted = booking?.status === "accepted";
+  const isCompleted = booking?.status === "completed";
 
   if (loading) {
     return (
@@ -204,9 +210,7 @@ export default function BookingDetails({
               <p className="text-sm text-slate-300">
                 {booking.partyDate} @ {booking.partyTime}
               </p>
-              <p className="text-xs text-slate-400">
-                Created: {createdDate}
-              </p>
+              <p className="text-xs text-slate-400">Created: {createdDate}</p>
             </div>
           </div>
           <span
@@ -258,13 +262,15 @@ export default function BookingDetails({
               <User className="w-4 h-4 text-emerald-300" />
               <p className="text-sm font-semibold">Contact</p>
             </div>
-            {booking.email ? (
+            <p className="text-sm text-slate-300 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-emerald-300" />
+              User email: {booking.email || "Account email not provided"}
+            </p>
+            {booking.contactEmail && booking.contactEmail !== booking.email && (
               <p className="text-sm text-slate-300 flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-300" />
-                {booking.email}
+                <Mail className="w-4 h-4 text-rose-300" />
+                Contact: {booking.contactEmail}
               </p>
-            ) : (
-              <p className="text-sm text-slate-300">Email not provided</p>
             )}
             {booking.phone ? (
               <p className="text-sm text-slate-300 flex items-center gap-2">
@@ -290,7 +296,8 @@ export default function BookingDetails({
           </p>
           {booking.stripeSessionId && (
             <p className="text-xs text-slate-400">
-              Session: <span className="font-mono">{booking.stripeSessionId}</span>
+              Session:{" "}
+              <span className="font-mono">{booking.stripeSessionId}</span>
             </p>
           )}
           {booking.paymentIntentId && (
@@ -310,7 +317,9 @@ export default function BookingDetails({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => changeStatus("accepted")}
-            disabled={actionId === booking.id || isCanceled}
+            disabled={
+              actionId === booking.id || isCanceled || isAccepted || isCompleted
+            }
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -318,14 +327,14 @@ export default function BookingDetails({
           </button>
           <button
             onClick={() => changeStatus("completed")}
-            disabled={actionId === booking.id || isCanceled}
+            disabled={actionId === booking.id || isCanceled || isCompleted}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
           >
             <CheckSquare className="w-4 h-4" />
             Mark complete
           </button>
           <button
-            onClick={cancelWithRefund}
+            onClick={() => setConfirming(true)}
             disabled={actionId === booking.id || isCanceled}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20 hover:bg-white/15 transition disabled:opacity-60"
           >
@@ -342,6 +351,43 @@ export default function BookingDetails({
           </button>
         </div>
       </section>
+
+      {confirming && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 text-white shadow-2xl p-5 space-y-4">
+            <div className="space-y-1">
+              <p className="text-lg font-semibold">Cancel and refund?</p>
+              <p className="text-sm text-slate-300">
+                This will cancel the booking and issue a full refund to the
+                customer.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirming(false)}
+                className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-slate-100 hover:bg-white/15 transition"
+                disabled={actionId === booking.id}
+              >
+                Keep booking
+              </button>
+              <button
+                onClick={cancelWithRefund}
+                disabled={actionId === booking.id}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {actionId === booking.id ? (
+                  <Spinner label="Canceling..." />
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4" />
+                    Yes, cancel & refund
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
