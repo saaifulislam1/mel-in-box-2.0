@@ -25,6 +25,7 @@ type NavItem = {
   description: string;
   icon: React.ReactNode;
   badge?: string;
+  match?: "exact" | "prefix";
 };
 
 export default function AdminLayout({
@@ -43,6 +44,7 @@ export default function AdminLayout({
         label: "Dashboard",
         description: "Overview & booking inbox",
         icon: <LayoutDashboard className="w-4 h-4" />,
+        match: "exact",
       },
       {
         href: "/admin/bookings",
@@ -50,12 +52,14 @@ export default function AdminLayout({
         description: "Requests, status, pagination",
         icon: <CalendarClock className="w-4 h-4" />,
         badge: unreadBookings > 0 ? `${unreadBookings} new` : undefined,
+        match: "prefix",
       },
       {
         href: "/admin/story-time",
         label: "Story Time",
         description: "Manage and edit videos",
         icon: <Film className="w-4 h-4" />,
+        match: "exact",
       },
       {
         href: "/admin/story-time/upload",
@@ -68,6 +72,7 @@ export default function AdminLayout({
         label: "Gallery",
         description: "Curate the photo library",
         icon: <Images className="w-4 h-4" />,
+        match: "exact",
       },
       {
         href: "/admin/gallery/upload",
@@ -80,6 +85,7 @@ export default function AdminLayout({
         label: "Party Packages",
         description: "Create and edit packages",
         icon: <PartyPopper className="w-4 h-4" />,
+        match: "exact",
       },
     ],
     [unreadBookings]
@@ -131,7 +137,10 @@ export default function AdminLayout({
           <div className="space-y-2">
             {navItems.map((item) => {
               const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+                item.match === "exact"
+                  ? pathname === item.href
+                  : pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link
