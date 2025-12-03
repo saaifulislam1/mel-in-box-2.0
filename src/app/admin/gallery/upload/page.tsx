@@ -6,7 +6,6 @@ import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { createPhoto, uploadGalleryFile } from "@/lib/galleryService";
 import { FormEvent, useState } from "react";
 import {
-  ArrowLeft,
   ImagePlus,
   Loader2,
   Palette,
@@ -82,25 +81,9 @@ export default function UploadPhotoPage() {
 
   return (
     <main className="space-y-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          onClick={() => router.push("/")}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back Home
-        </button>
-        <button
-          onClick={() => router.push("/admin/gallery")}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <div className="flex items-center gap-2 text-slate-200">
-          <ImagePlus className="w-5 h-5 text-sky-300" />
-          <h1 className="text-xl font-semibold">Upload Photo</h1>
-        </div>
+      <div className="flex items-center gap-2 text-slate-200">
+        <ImagePlus className="w-5 h-5 text-sky-300" />
+        <h1 className="text-xl font-semibold">Upload Photo</h1>
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur shadow-2xl p-6">

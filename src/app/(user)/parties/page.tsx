@@ -4,13 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Sparkles,
-  Clock,
-  Users,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Clock, Users, ArrowRight } from "lucide-react";
 import { getAllPartyPackages, type PartyPackage } from "@/lib/partyService";
 import { Spinner } from "@/components/Spinner";
 
@@ -55,7 +49,7 @@ export default function KidPartiesPage() {
 
   return (
     <main
-      className={`min-h-screen ${gradientBg} text-slate-800 pt-24 pb-24 px-3 sm:px-5`}
+      className={`min-h-screen ${gradientBg} text-slate-800 pt-24 pb-24 px-4 sm:px-5`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.7),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.5),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-5xl w-full mx-auto space-y-6">
@@ -70,8 +64,8 @@ export default function KidPartiesPage() {
           </div>
         </div>
         <p className="text-center text-slate-600 max-w-2xl mx-auto text-sm sm:text-base px-2">
-          Choose a magical party package. Tap "Book This Party" to pick your
-          date, time, location, and complete payment securely.
+          Choose a magical party package. Tap Book This Party to pick your date,
+          time, location, and complete payment securely.
         </p>
 
         {loading ? (
