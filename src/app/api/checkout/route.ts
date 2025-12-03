@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       location: location || "",
       mapLink,
       notes,
-      email,
+      email: email?.toLowerCase(),
       phone,
       status: "pending_payment",
     });

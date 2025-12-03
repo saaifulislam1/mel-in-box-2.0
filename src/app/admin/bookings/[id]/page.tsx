@@ -12,11 +12,12 @@ import {
   CheckSquare,
   CircleDot,
   Clock3,
+  CreditCard,
   Mail,
   MapPin,
   Phone,
+  RotateCcw,
   User,
-  XCircle,
 } from "lucide-react";
 import {
   getPartyBooking,
@@ -116,6 +117,33 @@ export default function BookingDetails({
     }
   };
 
+  const cancelWithRefund = async () => {
+    if (!booking) return;
+    setActionId(booking.id);
+    try {
+      const res = await fetch("/api/bookings/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: booking.id }),
+      });
+      if (!res.ok) throw new Error("Cancel failed");
+      const data = await res.json();
+      setBooking({
+        ...booking,
+        status: "canceled",
+        refundId: data.refundId,
+        refundAmount: data.refundAmount,
+        refundStatus: data.refundStatus,
+        read: true,
+      });
+    } catch (err) {
+      console.error("Failed to cancel booking", err);
+      load();
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const createdDate = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const val = (booking as any)?.createdAt;
@@ -123,6 +151,8 @@ export default function BookingDetails({
     if (typeof val === "string") return val;
     return "Not recorded";
   }, [booking]);
+
+  const isCanceled = booking?.status === "canceled" && Boolean(booking.refundId);
 
   if (loading) {
     return (
@@ -250,30 +280,57 @@ export default function BookingDetails({
           </div>
         </div>
 
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-slate-200">
+            <CreditCard className="w-4 h-4 text-sky-300" />
+            <p className="text-sm font-semibold">Payment</p>
+          </div>
+          <p className="text-sm text-slate-300">
+            Amount: ${booking.amountPaid ?? booking.packagePrice ?? 0}
+          </p>
+          {booking.stripeSessionId && (
+            <p className="text-xs text-slate-400">
+              Session: <span className="font-mono">{booking.stripeSessionId}</span>
+            </p>
+          )}
+          {booking.paymentIntentId && (
+            <p className="text-xs text-slate-400">
+              Payment intent:{" "}
+              <span className="font-mono">{booking.paymentIntentId}</span>
+            </p>
+          )}
+          {booking.refundId && (
+            <p className="text-xs text-rose-200">
+              Refund {booking.refundStatus}: {booking.refundId} • $
+              {booking.refundAmount ?? 0}
+            </p>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => changeStatus("accepted")}
-            disabled={actionId === booking.id}
+            disabled={actionId === booking.id || isCanceled}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
           >
             <CheckCircle2 className="w-4 h-4" />
             Accept
           </button>
           <button
-            onClick={() => changeStatus("rejected")}
-            disabled={actionId === booking.id}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
-          >
-            <XCircle className="w-4 h-4" />
-            Reject
-          </button>
-          <button
             onClick={() => changeStatus("completed")}
-            disabled={actionId === booking.id}
+            disabled={actionId === booking.id || isCanceled}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
           >
             <CheckSquare className="w-4 h-4" />
             Mark complete
+          </button>
+          <button
+            onClick={cancelWithRefund}
+            disabled={actionId === booking.id || isCanceled}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20 hover:bg-white/15 transition disabled:opacity-60"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Cancel & refund
           </button>
           <button
             onClick={markRead}

@@ -16,7 +16,7 @@ import {
   Mail,
   MapPin,
   Phone,
-  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -134,6 +134,37 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const cancelWithRefund = async (id: string) => {
+    setActionId(id);
+    try {
+      const res = await fetch("/api/bookings/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id }),
+      });
+      if (!res.ok) throw new Error("Cancel failed");
+      const data = await res.json();
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                status: "canceled",
+                refundId: data.refundId,
+                refundAmount: data.refundAmount,
+                refundStatus: data.refundStatus,
+              }
+            : b
+        )
+      );
+    } catch (err) {
+      console.error("Failed to cancel booking", err);
+      await loadBookings();
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const formatDate = (value: unknown) => {
     // Firestore Timestamp may have toDate; otherwise show as-is
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -242,12 +273,17 @@ export default function AdminBookingsPage() {
                       {b.phone}
                     </>
                   )}
+                  {b.status === "canceled" && b.refundId && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500/20 text-rose-100 border border-rose-500/40">
+                      Canceled & refunded
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => updateStatus(b.id, "accepted")}
-                    disabled={actionId === b.id}
+                    disabled={actionId === b.id || b.status === "canceled"}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
                   >
                     {actionId === b.id ? (
@@ -258,20 +294,20 @@ export default function AdminBookingsPage() {
                     Accept
                   </button>
                   <button
-                    onClick={() => updateStatus(b.id, "rejected")}
-                    disabled={actionId === b.id}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-rose-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    Reject
-                  </button>
-                  <button
                     onClick={() => updateStatus(b.id, "completed")}
-                    disabled={actionId === b.id}
+                    disabled={actionId === b.id || b.status === "canceled"}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
                   >
                     <CheckSquare className="w-4 h-4" />
                     Mark complete
+                  </button>
+                  <button
+            onClick={() => cancelWithRefund(b.id)}
+                    disabled={actionId === b.id || b.status === "canceled"}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20 hover:bg-white/15 transition disabled:opacity-60"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Cancel & refund
                   </button>
                   <button
                     onClick={() => markRead(b.id)}
