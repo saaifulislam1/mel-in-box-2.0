@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { getAllVideos, deleteVideo } from "@/lib/videoService";
 import {
   AlertCircle,
-  ArrowLeft,
   Clock3,
   Film,
   Play,
@@ -16,12 +15,10 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
 
 export default function AdminStoryTimePage() {
   useAdminGuard();
-  const router = useRouter();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [videos, setVideos] = useState<any[]>([]);
@@ -57,25 +54,9 @@ export default function AdminStoryTimePage() {
   return (
     <main className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back Home
-          </button>
-          <button
-            onClick={() => router.push("/admin")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="flex items-center gap-2 text-slate-200">
-            <Film className="w-5 h-5 text-emerald-300" />
-            <h1 className="text-xl font-semibold">Story Time Library</h1>
-          </div>
+        <div className="flex items-center gap-2 text-slate-200">
+          <Film className="w-5 h-5 text-emerald-300" />
+          <h1 className="text-xl font-semibold">Story Time Library</h1>
         </div>
         <Link
           href="/admin/story-time/upload"

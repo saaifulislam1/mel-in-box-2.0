@@ -39,7 +39,14 @@ export type PartyBooking = {
   notes?: string;
   email?: string;
   phone?: string;
-  status?: "pending_payment" | "paid" | "canceled";
+  status?:
+    | "pending_payment"
+    | "paid"
+    | "accepted"
+    | "rejected"
+    | "completed"
+    | "canceled";
+  read?: boolean;
   stripeSessionId?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt?: any;
@@ -85,10 +92,18 @@ export async function getPartyPackage(id: string) {
   return { id: snap.id, ...snap.data() };
 }
 
+export async function getPartyBooking(id: string) {
+  if (!id) return null;
+  const snap = await getDoc(doc(db, "partyBookings", id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() };
+}
+
 export async function createPartyBooking(data: PartyBooking) {
   return await addDoc(bookingsCol, {
     ...data,
     status: data.status ?? "pending_payment",
+    read: data.read ?? false,
     createdAt: serverTimestamp(),
   });
 }

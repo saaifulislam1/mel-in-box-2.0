@@ -7,7 +7,6 @@ import { useAdminGuard } from "@/hooks/useAdminGuard";
 import {
   createPartyPackage,
   deletePartyPackage,
-  getAllPartyBookings,
   getAllPartyPackages,
   updatePartyPackage,
   type PartyPackage,
@@ -15,33 +14,18 @@ import {
 import { Spinner } from "@/components/Spinner";
 import {
   AlertCircle,
-  ArrowLeft,
   CalendarClock,
   Edit2,
   Save,
   Trash2,
-  Users,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 type PackageRow = PartyPackage & { id: string };
-type BookingRow = {
-  id: string;
-  packageName: string;
-  partyDate: string;
-  partyTime: string;
-  kidsExpected: number;
-  location: string;
-  email?: string;
-  status?: string;
-};
 
 export default function AdminPartiesPage() {
   useAdminGuard();
-  const router = useRouter();
 
   const [packages, setPackages] = useState<PackageRow[]>([]);
-  const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -73,16 +57,11 @@ export default function AdminPartiesPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [pkgData, bookingData] = await Promise.all([
-        getAllPartyPackages(),
-        getAllPartyBookings(),
-      ]);
+      const pkgData = await getAllPartyPackages();
       setPackages(pkgData as PackageRow[]);
-      setBookings(bookingData as BookingRow[]);
     } catch (err) {
       console.error("Failed to load parties", err);
       setPackages([]);
-      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -159,27 +138,9 @@ export default function AdminPartiesPage() {
 
   return (
     <main className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back Home
-          </button>
-          <button
-            onClick={() => router.push("/admin")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="flex items-center gap-2 text-slate-200">
-            <CalendarClock className="w-5 h-5 text-purple-300" />
-            <h1 className="text-xl font-semibold">Party Packages</h1>
-          </div>
-        </div>
+      <div className="flex items-center gap-2 text-slate-200">
+        <CalendarClock className="w-5 h-5 text-purple-300" />
+        <h1 className="text-xl font-semibold">Party Packages</h1>
       </div>
 
       {message && (
@@ -189,177 +150,137 @@ export default function AdminPartiesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <section className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5 shadow-lg space-y-4">
-          <h2 className="text-lg font-semibold text-slate-100">
-            {editingId ? "Edit Package" : "Create Package"}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-3 text-slate-100">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Package name</span>
-                <input
-                  required
-                  placeholder="Birthday Blast Basic"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </label>
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Price (USD)</span>
-                <input
-                  type="number"
-                  required
-                  placeholder="99"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.price}
-                  onChange={(e) =>
-                    setForm({ ...form, price: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Duration</span>
-                <input
-                  required
-                  placeholder="2 hours"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.duration}
-                  onChange={(e) =>
-                    setForm({ ...form, duration: e.target.value })
-                  }
-                />
-              </label>
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Kids count</span>
-                <input
-                  type="number"
-                  required
-                  placeholder="10"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.kidsCount}
-                  onChange={(e) =>
-                    setForm({ ...form, kidsCount: Number(e.target.value) })
-                  }
-                />
-              </label>
-            </div>
-
-            <label className="text-sm space-y-1 block">
-              <span className="block text-slate-200">
-                What&apos;s included (one per line or comma separated)
-              </span>
-              <textarea
-                placeholder={"Decorations\nBirthday cake\nGames"}
+      <section className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5 shadow-lg space-y-4">
+        <h2 className="text-lg font-semibold text-slate-100">
+          {editingId ? "Edit Package" : "Create Package"}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-3 text-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Package name</span>
+              <input
+                required
+                placeholder="Birthday Blast Basic"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                rows={3}
-                value={form.includes}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Price (USD)</span>
+              <input
+                type="number"
+                required
+                placeholder="99"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.price}
                 onChange={(e) =>
-                  setForm({ ...form, includes: e.target.value })
+                  setForm({ ...form, price: Number(e.target.value) })
                 }
               />
             </label>
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Duration</span>
+              <input
+                required
+                placeholder="2 hours"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.duration}
+                onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              />
+            </label>
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Kids count</span>
+              <input
+                type="number"
+                required
+                placeholder="10"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.kidsCount}
+                onChange={(e) =>
+                  setForm({ ...form, kidsCount: Number(e.target.value) })
+                }
+              />
+            </label>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Icon (emoji)</span>
-                <input
-                  placeholder="🎉"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.icon}
-                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                />
-              </label>
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">Badge (optional)</span>
-                <input
-                  placeholder="Popular"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.badge}
-                  onChange={(e) => setForm({ ...form, badge: e.target.value })}
-                />
-              </label>
-              <label className="text-sm space-y-1">
-                <span className="block text-slate-200">
-                  Short description (optional)
-                </span>
-                <input
-                  placeholder="Great for ages 5-8"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                />
-              </label>
-            </div>
+          <label className="text-sm space-y-1 block">
+            <span className="block text-slate-200">
+              What&apos;s included (one per line or comma separated)
+            </span>
+            <textarea
+              placeholder={"Decorations\nBirthday cake\nGames"}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+              rows={3}
+              value={form.includes}
+              onChange={(e) => setForm({ ...form, includes: e.target.value })}
+            />
+          </label>
 
-            <div className="flex justify-end gap-2">
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-slate-200 hover:bg-white/15 transition"
-                >
-                  Cancel
-                </button>
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Icon (emoji)</span>
+              <input
+                placeholder="🎉"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.icon}
+                onChange={(e) => setForm({ ...form, icon: e.target.value })}
+              />
+            </label>
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">Badge (optional)</span>
+              <input
+                placeholder="Popular"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.badge}
+                onChange={(e) => setForm({ ...form, badge: e.target.value })}
+              />
+            </label>
+            <label className="text-sm space-y-1">
+              <span className="block text-slate-200">
+                Short description (optional)
+              </span>
+              <input
+                placeholder="Great for ages 5-8"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            {editingId && (
               <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-purple-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-70"
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  resetForm();
+                }}
+                className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-slate-200 hover:bg-white/15 transition"
               >
-                {saving ? (
-                  <Spinner label="Saving..." />
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {editingId ? "Update" : "Create"}
-                  </>
-                )}
+                Cancel
               </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5 shadow-lg space-y-3">
-          <h2 className="text-lg font-semibold text-slate-100">Bookings</h2>
-          {loading ? (
-            <Spinner label="Loading bookings..." />
-          ) : bookings.length === 0 ? (
-            <p className="text-slate-300 text-sm">No bookings yet.</p>
-          ) : (
-            <div className="max-h-[480px] overflow-auto space-y-3 pr-1">
-              {bookings.map((b) => (
-                <div
-                  key={b.id}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-slate-200"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold">{b.packageName}</p>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10">
-                      {b.status ?? "pending"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-300">
-                    {b.partyDate} @ {b.partyTime}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Kids: {b.kidsExpected} • {b.location}
-                  </p>
-                  {b.email && (
-                    <p className="text-xs text-slate-400">Email: {b.email}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+            )}
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-purple-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-70"
+            >
+              {saving ? (
+                <Spinner label="Saving..." />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  {editingId ? "Update" : "Create"}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </section>
 
       <section className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5 shadow-lg space-y-4">
         <div className="flex items-center justify-between">
