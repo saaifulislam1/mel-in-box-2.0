@@ -82,6 +82,13 @@ export default function AdminLayout({
         icon: <Upload className="w-4 h-4" />,
       },
       {
+        href: "/admin/social",
+        label: "Social",
+        description: "Moderate community posts",
+        icon: <Menu className="w-4 h-4" />,
+        match: "prefix",
+      },
+      {
         href: "/admin/parties",
         label: "Party Packages",
         description: "Create and edit packages",

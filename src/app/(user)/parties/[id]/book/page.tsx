@@ -6,7 +6,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getPartyPackage } from "@/lib/partyService";
 import { Spinner } from "@/components/Spinner";
-import { ArrowLeft, CalendarClock, MapPin, Users, CreditCard } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  MapPin,
+  Users,
+  CreditCard,
+} from "lucide-react";
 import { useAuth } from "@/app/AuthProvider";
 
 type PackageData = {
@@ -96,6 +102,7 @@ export default function BookPartyPage() {
       } else {
         throw new Error("Checkout URL missing");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Something went wrong");
@@ -104,7 +111,7 @@ export default function BookPartyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-100 to-sky-100 text-slate-800 pt-24 pb-24 px-3 sm:px-5">
+    <main className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-100 to-sky-100 text-slate-800 pt-24 pb-24 px-4 sm:px-5">
       <div className="relative max-w-4xl mx-auto bg-white/80 border border-slate-100 rounded-3xl shadow-lg backdrop-blur p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
           <button
@@ -150,10 +157,7 @@ export default function BookPartyPage() {
               </div>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4 text-slate-800"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4 text-slate-800">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-sm text-slate-600">Party Date</label>
@@ -231,7 +235,9 @@ export default function BookPartyPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm text-slate-600">Contact phone</label>
+                  <label className="text-sm text-slate-600">
+                    Contact phone
+                  </label>
                   <input
                     type="tel"
                     value={phone}

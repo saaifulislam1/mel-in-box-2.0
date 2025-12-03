@@ -1,0 +1,484 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/app/(user)/social/page.tsx
+
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  addSocialComment,
+  createSocialPost,
+  deleteSocialComment,
+  deleteSocialPost,
+  getSocialComments,
+  getSocialPosts,
+  hasUserLiked,
+  toggleSocialLike,
+  type SocialPost,
+} from "@/lib/socialService";
+import { uploadGalleryFile } from "@/lib/galleryService";
+import { useAuth } from "@/app/AuthProvider";
+import useUserGuard from "@/hooks/useUserGuard";
+import { Spinner } from "@/components/Spinner";
+import {
+  Camera,
+  Heart,
+  MessageSquare,
+  Plus,
+  Send,
+  Share2,
+  Trash2,
+} from "lucide-react";
+
+type PostRow = SocialPost & {
+  id: string;
+  liked?: boolean;
+  comments?: CommentRow[];
+  showComments?: boolean;
+};
+
+type CommentRow = {
+  id: string;
+  authorId: string;
+  authorEmail?: string;
+  authorName?: string | null;
+  text: string;
+  createdAt?: unknown;
+};
+
+export default function SocialPage() {
+  useUserGuard();
+  const { user } = useAuth();
+  const [content, setContent] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [posts, setPosts] = useState<PostRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<unknown>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
+    {}
+  );
+  const [composerOpen, setComposerOpen] = useState(false);
+
+  const canPost = useMemo(
+    () => content.trim().length > 0 || imageFile,
+    [content, imageFile]
+  );
+
+  const load = async (cursor?: unknown, append = false) => {
+    if (!user) return;
+    const setLoadingState = append ? setLoadingMore : setLoading;
+    setLoadingState(true);
+    try {
+      const { posts: data, nextCursor } = await getSocialPosts(5, cursor);
+      const withLikes = await Promise.all(
+        data.map(async (p) => {
+          const liked = await hasUserLiked(p.id, user.uid);
+          return { ...(p as PostRow), liked };
+        })
+      );
+      setPosts((prev) => (append ? [...prev, ...withLikes] : withLikes));
+      setNextCursor(nextCursor);
+    } catch (err) {
+      console.error("Failed to load posts", err);
+      if (!append) setPosts([]);
+    } finally {
+      setLoadingState(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
+  const handleCreate = async () => {
+    if (!user || !canPost) return;
+    setCreating(true);
+    try {
+      let imageURL: string | undefined;
+      if (imageFile) {
+        imageURL = await uploadGalleryFile(
+          `social/${user.uid}-${Date.now()}-${imageFile.name}`,
+          imageFile
+        );
+      }
+      const ref = await createSocialPost({
+        authorId: user.uid,
+        authorEmail: user.email || undefined,
+        authorName: user.displayName || undefined,
+        content: content.trim(),
+        imageURL,
+      });
+      const newPost: PostRow = {
+        id: ref.id,
+        authorId: user.uid,
+        authorEmail: user.email || undefined,
+        authorName: user.displayName || undefined,
+        content: content.trim(),
+        imageURL,
+        likeCount: 0,
+        commentCount: 0,
+        liked: false,
+        createdAt: new Date(),
+      };
+      setPosts((prev) => [newPost, ...prev]);
+      setContent("");
+      setImageFile(null);
+    } catch (err) {
+      console.error("Failed to create post", err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) return;
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              liked: !p.liked,
+              likeCount: (p.likeCount || 0) + (p.liked ? -1 : 1),
+            }
+          : p
+      )
+    );
+    try {
+      await toggleSocialLike(postId, user.uid);
+    } catch (err) {
+      console.error("Failed to toggle like", err);
+      load();
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    if (!user) return;
+    const text = commentInputs[postId]?.trim();
+    if (!text) return;
+    try {
+      await addSocialComment(postId, {
+        authorId: user.uid,
+        authorEmail: user.email || undefined,
+        authorName: user.displayName || undefined,
+        text,
+      });
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, commentCount: (p.commentCount || 0) + 1 }
+            : p
+        )
+      );
+      await loadComments(postId);
+    } catch (err) {
+      console.error("Failed to add comment", err);
+    }
+  };
+
+  const loadComments = async (postId: string) => {
+    try {
+      const comments = await getSocialComments(postId, 20);
+      const typedComments: CommentRow[] = comments.map((c) => ({
+        id: c.id as string,
+        authorId: (c as any).authorId ?? "",
+        authorEmail: (c as any).authorEmail,
+        authorName: (c as any).authorName,
+        text: (c as any).text ?? "",
+        createdAt: (c as any).createdAt,
+      }));
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: typedComments,
+                showComments: true,
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Failed to load comments", err);
+    }
+  };
+
+  const toggleComments = async (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (post?.showComments) {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, showComments: false } : p))
+      );
+    } else {
+      await loadComments(postId);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await deleteSocialPost(postId);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err) {
+      console.error("Failed to delete post", err);
+    }
+  };
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    try {
+      await deleteSocialComment(postId, commentId);
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: (p.comments || []).filter((c) => c.id !== commentId),
+                commentCount: Math.max((p.commentCount || 1) - 1, 0),
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Failed to delete comment", err);
+    }
+  };
+
+  const handleShare = async (postId: string) => {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/social#${postId}`
+      );
+      alert("Link copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy link", err);
+    }
+  };
+
+  return (
+    <main className="px-4 space-y-8 bg-gradient-to-br  from-pink-100 via-rose-100 to-amber-50 min-h-screen -mx-4 sm:mx-0 pb-16 pt-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-0 mt-20">
+        <Link
+          href="/"
+          className="inline-flex items-center  px-3 py-3 mb-9 rounded-full bg-white/70 border border-pink-200 text-pink-600 shadow-sm hover:shadow transition"
+        >
+          ← Back Home
+        </Link>
+        <div className="flex  w-full items-center justify-center mb-6 gap-6">
+          <div className="flex items-center ">
+            <h1 className="text-xl text-center  font-semibold text-pink-700">
+              Social Fun
+            </h1>
+          </div>
+          <button
+            onClick={() => setComposerOpen((v) => !v)}
+            className="p-3 items-end rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow hover:-translate-y-0.5 transition"
+            aria-label="Create post"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+
+        {composerOpen && (
+          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-30 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg">
+                {user?.displayName?.[0] || "U"}
+              </div>
+              <div className="flex-1">
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={2}
+                  placeholder="Share your party memories and fun moments! 🎉"
+                  className="w-full rounded-2xl border border-pink-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                />
+                <div className="flex items-center gap-3 mt-3 flex-wrap">
+                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-pink-200 bg-white text-sm text-pink-600 cursor-pointer hover:border-pink-300">
+                    <Camera className="w-4 h-4" />
+                    {imageFile ? imageFile.name : "Add Photo (optional)"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        setImageFile(e.target.files?.[0] || null)
+                      }
+                    />
+                  </label>
+                  <button
+                    onClick={handleCreate}
+                    disabled={!canPost || creating}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+                  >
+                    {creating ? <Spinner label="Posting..." /> : "Post 🎉"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="space-y-5 mt-6  md:px-30">
+          {loading ? (
+            <Spinner label="Loading posts..." />
+          ) : posts.length === 0 ? (
+            <div className="rounded-2xl border border-pink-200 bg-white/80 p-5 text-pink-700">
+              No posts yet. Be the first to share!
+            </div>
+          ) : (
+            posts.map((p) => (
+              <article
+                key={p.id}
+                className="rounded-3xl bg-white shadow-lg border border-pink-200 w-full h-[410px]  mx-0 p-5 space-y-3"
+                id={p.id}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-sm">
+                      {p.authorName?.[0] || p.authorEmail?.[0] || "U"}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {p.authorName || p.authorEmail || "User"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {p.createdAt?.toDate
+                          ? p.createdAt.toDate().toLocaleString()
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {p.authorId === user?.uid && (
+                      <button
+                        onClick={() => handleDeletePost(p.id)}
+                        className="p-2 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleShare(p.id)}
+                      className="p-2 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                {p.content && (
+                  <p className="text-slate-800 text-sm leading-relaxed">
+                    {p.content}
+                  </p>
+                )}
+                {p.imageURL && (
+                  <div className="overflow-hidden rounded-2xl border border-pink-100">
+                    <img
+                      src={p.imageURL}
+                      alt="Post"
+                      className="w-full h-[230px] object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <button
+                    onClick={() => handleLike(p.id)}
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border ${
+                      p.liked
+                        ? "bg-rose-50 border-rose-200 text-rose-600"
+                        : "bg-slate-50 border-slate-200 text-slate-700"
+                    }`}
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${p.liked ? "fill-rose-500" : ""}`}
+                    />
+                    {p.likeCount || 0}
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleComments(p.id)}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full border bg-slate-50 border-slate-200 text-slate-700"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      {p.commentCount || 0} comments
+                    </button>
+                  </div>
+                </div>
+
+                {p.showComments && (
+                  <div className="border border-pink-100 rounded-2xl p-3 space-y-3 bg-pink-50/50">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={commentInputs[p.id] || ""}
+                        onChange={(e) =>
+                          setCommentInputs((prev) => ({
+                            ...prev,
+                            [p.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Add a comment..."
+                        className="flex-1 rounded-full border border-pink-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-pink-200 text-sm"
+                      />
+                      <button
+                        onClick={() => handleAddComment(p.id)}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-pink-500 text-white text-sm"
+                      >
+                        <Send className="w-4 h-4" />
+                        Send
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {(p.comments || []).length === 0 ? (
+                        <p className="text-xs text-slate-500">
+                          No comments yet.
+                        </p>
+                      ) : (
+                        (p.comments || []).map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 border border-pink-100"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {c.authorName || c.authorEmail || "User"}
+                              </p>
+                              <p className="text-xs text-slate-500">{c.text}</p>
+                            </div>
+                            {c.authorId === user?.uid && (
+                              <button
+                                onClick={() =>
+                                  handleDeleteComment(p.id, c.id as string)
+                                }
+                                className="p-1 rounded-full text-rose-500 hover:bg-rose-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))
+          )}
+        </section>
+
+        {nextCursor ? (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => load(nextCursor, true)}
+              disabled={loadingMore}
+              className="px-4 py-2 rounded-full bg-white border border-pink-200 text-pink-700 shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+            >
+              {loadingMore ? <Spinner label="Loading..." /> : "Load more"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </main>
+  );
+}

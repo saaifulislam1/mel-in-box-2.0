@@ -144,7 +144,7 @@ const cards = [
     subtitle: "Share & Connect",
     icon: Users,
     emoji: "👨‍👩‍👧‍👦",
-    href: "/social-fun",
+    href: "/social",
     gradient: "from-pink-400 to-red-400",
   },
   {
