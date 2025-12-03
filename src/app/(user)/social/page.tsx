@@ -46,6 +46,11 @@ type CommentRow = {
   createdAt?: unknown;
 };
 
+// Simple in-memory cache to reduce reload cost
+let postsCache: PostRow[] | null = null;
+let cursorCache: unknown | null = null;
+const likedCache: Record<string, boolean> = {};
+
 export default function SocialPage() {
   useUserGuard();
   const { user } = useAuth();
@@ -71,15 +76,29 @@ export default function SocialPage() {
     const setLoadingState = append ? setLoadingMore : setLoading;
     setLoadingState(true);
     try {
+      if (!cursor && postsCache) {
+        setPosts(postsCache);
+        setNextCursor(cursorCache);
+        setLoadingState(false);
+        return;
+      }
+
       const { posts: data, nextCursor } = await getSocialPosts(5, cursor);
       const withLikes = await Promise.all(
         data.map(async (p) => {
-          const liked = await hasUserLiked(p.id, user.uid);
+          const liked =
+            likedCache[p.id] ?? (await hasUserLiked(p.id, user.uid));
+          likedCache[p.id] = liked;
           return { ...(p as PostRow), liked };
         })
       );
-      setPosts((prev) => (append ? [...prev, ...withLikes] : withLikes));
+      const merged = append ? [...posts, ...withLikes] : withLikes;
+      setPosts(merged);
       setNextCursor(nextCursor);
+      if (!append) {
+        postsCache = merged;
+        cursorCache = nextCursor;
+      }
     } catch (err) {
       console.error("Failed to load posts", err);
       if (!append) setPosts([]);
