@@ -78,7 +78,7 @@ export default function UserBookingsPage() {
 
   if (!user?.email) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-10 space-y-4 pt-[300px]">
         <div className="flex items-center gap-2 text-slate-800">
           <CalendarClock className="w-5 h-5 text-amber-600" />
           <h1 className="text-2xl font-semibold">Your bookings</h1>
