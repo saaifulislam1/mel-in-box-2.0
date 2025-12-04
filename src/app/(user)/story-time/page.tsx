@@ -69,11 +69,14 @@ export default function StoryTimePage() {
     };
 
     const cached =
-      typeof window !== "undefined" ? localStorage.getItem(STORY_CACHE_KEY) : null;
+      typeof window !== "undefined"
+        ? localStorage.getItem(STORY_CACHE_KEY)
+        : null;
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as CachePayload;
         if (parsed?.videos?.length) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setVideos(parsed.videos);
           setLoading(false);
           loadVideos({ background: true });
