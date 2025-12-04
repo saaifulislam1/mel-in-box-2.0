@@ -8,13 +8,17 @@ import {
   Download,
   Heart,
   Image as ImageIcon,
+  PlayCircle,
   Share2,
+  SquareArrowLeft,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getAllPhotos, updatePhotoLikes } from "@/lib/galleryService";
 import { Spinner } from "@/components/Spinner";
 import { useAuth } from "@/app/AuthProvider";
+import Link from "next/link";
+import HeadingSection from "@/components/HeadingSection";
 
 type Photo = {
   id: string;
@@ -218,14 +222,13 @@ export default function GalleryPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(255,255,255,0.7),transparent_35%),radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.55),transparent_30%),radial-gradient(circle_at_40%_80%,rgba(255,255,255,0.4),transparent_30%)] pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto px-4 pt-6 sm:pt-10 space-y-5">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-sky-700 font-semibold text-base sm:text-lg">
-            <ImageIcon className="w-5 h-5 shrink-0" />
-            <span className="font-semibold whitespace-nowrap">
-              Photo Gallery
-            </span>
-          </div>
-        </div>
+        <HeadingSection
+          title="Photo Gallery"
+          href="/"
+          textColor="text-sky-700"
+          icon={ImageIcon}
+        />
+        <div className="flex flex-wrap items-center justify-center gap-3"></div>
         <p className="text-center text-slate-600 max-w-2xl mx-auto px-2 text-sm sm:text-base">
           Relive the most magical party moments. Love photos, share with
           friends, download keepsakes, and tap to view each picture up close.

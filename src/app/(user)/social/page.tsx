@@ -22,6 +22,7 @@ import useUserGuard from "@/hooks/useUserGuard";
 import { Spinner } from "@/components/Spinner";
 import {
   Camera,
+  Handshake,
   Heart,
   MessageSquare,
   Plus,
@@ -29,6 +30,7 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
+import HeadingSection from "@/components/HeadingSection";
 
 type PostRow = SocialPost & {
   id: string;
@@ -508,18 +510,24 @@ export default function SocialPage() {
   return (
     <main className="px-4 space-y-8 bg-gradient-to-br  from-pink-100 via-rose-100 to-amber-50 min-h-screen -mx-4 sm:mx-0 pb-16 pt-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-0 mt-20">
-        <Link
+        {/* <Link
           href="/"
           className="inline-flex items-center  px-3 py-3 mb-9 rounded-full bg-white/70 border border-pink-200 text-pink-600 shadow-sm hover:shadow transition"
         >
           ← Back Home
-        </Link>
-        <div className="flex  w-full items-center justify-center mb-6 gap-6">
-          <div className="flex items-center ">
+        </Link> */}
+        <HeadingSection
+          href="/"
+          textColor="text-pink-600"
+          title="Social Fun"
+          icon={Handshake}
+        />
+        <div className="flex  mt-6 w-full items-center justify-center mb-6 gap-6">
+          {/* <div className="flex items-center ">
             <h1 className="text-xl text-center  font-semibold text-pink-700">
               Social Fun
             </h1>
-          </div>
+          </div> */}
           <button
             onClick={() => setComposerOpen((v) => !v)}
             className="p-3 items-end rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow hover:-translate-y-0.5 transition"

@@ -3,7 +3,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, Clock3, Eye, PlayCircle, X } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Clock3,
+  Eye,
+  PlayCircle,
+  X,
+  SquareArrowLeft,
+} from "lucide-react";
 import {
   getAllVideos,
   incrementViewCount,
@@ -11,6 +19,8 @@ import {
 } from "@/lib/videoService";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
+import Link from "next/link";
+import HeadingSection from "@/components/HeadingSection";
 
 type VideoItem = VideoData & {
   id: string;
@@ -80,12 +90,12 @@ export default function StoryTimePage() {
       {/* decorative accents */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-5xl mx-auto pt-5  sm:px-4 space-y-6">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-emerald-700 font-semibold text-base sm:text-lg">
-            <PlayCircle className="w-5 h-5" />
-            <span className="font-semibold whitespace-nowrap">Story Time</span>
-          </div>
-        </div>
+        <HeadingSection
+          href="/"
+          title="Story Time"
+          textColor="text-emerald-700"
+          icon={PlayCircle}
+        />
 
         {loading && (
           <div className="flex justify-center py-4">
