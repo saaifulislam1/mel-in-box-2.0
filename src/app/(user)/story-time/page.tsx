@@ -33,6 +33,8 @@ type VideoItem = VideoData & {
 };
 type CachePayload = { videos: VideoItem[]; updatedAt: number };
 
+const STORY_CACHE_KEY = "story-time-cache";
+
 const formatViews = (views: number) => {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
   if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
@@ -44,7 +46,6 @@ export default function StoryTimePage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [selected, setSelected] = useState<VideoItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const cacheKey = "story-time-cache";
 
   const tagColor = useMemo(
     () => ["bg-pink-100 text-pink-600", "bg-purple-100 text-purple-600"],
@@ -61,29 +62,31 @@ export default function StoryTimePage() {
       if (!isMounted) return;
       setVideos(data);
       localStorage.setItem(
-        cacheKey,
+        STORY_CACHE_KEY,
         JSON.stringify({ videos: data, updatedAt: Date.now() } as CachePayload)
       );
       setLoading(false);
     };
 
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
-      if (raw) {
-        const cached = JSON.parse(raw) as CachePayload;
-        if (cached?.videos?.length) {
-          setVideos(cached.videos);
+    const cached =
+      typeof window !== "undefined" ? localStorage.getItem(STORY_CACHE_KEY) : null;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as CachePayload;
+        if (parsed?.videos?.length) {
+          setVideos(parsed.videos);
           setLoading(false);
           loadVideos({ background: true });
-        } else {
-          loadVideos();
+          return () => {
+            isMounted = false;
+          };
         }
-      } else {
-        loadVideos();
+      } catch {
+        // ignore parse errors, fall through to full load
       }
-    } catch {
-      loadVideos();
     }
+
+    loadVideos();
 
     return () => {
       isMounted = false;
