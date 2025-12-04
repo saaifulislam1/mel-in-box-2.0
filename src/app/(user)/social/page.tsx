@@ -46,10 +46,86 @@ type CommentRow = {
   createdAt?: unknown;
 };
 
+type SerializedPostRow = Omit<PostRow, "createdAt"> & { createdAt?: string };
+type CachePayload = {
+  posts: SerializedPostRow[];
+  nextCursor: unknown;
+  liked: Record<string, boolean>;
+};
+
 // Simple in-memory cache to reduce reload cost
 let postsCache: PostRow[] | null = null;
 let cursorCache: unknown | null = null;
 const likedCache: Record<string, boolean> = {};
+
+const cacheKey = (userId: string) => `social-cache:${userId}`;
+
+const serializeDate = (value: unknown) => {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+  if (value instanceof Date) return value.toISOString();
+  // Firestore Timestamp has toDate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((value as any).toDate) return (value as any).toDate().toISOString();
+  return undefined;
+};
+
+const serializePosts = (list: PostRow[]): SerializedPostRow[] =>
+  list.map((p) => ({
+    ...p,
+    createdAt: serializeDate(p.createdAt),
+  }));
+
+const deserializePosts = (list: SerializedPostRow[]): PostRow[] =>
+  list.map((p) => ({
+    ...p,
+    createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+  }));
+
+const readCache = (userId: string): CachePayload | null => {
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw) as CachePayload;
+  } catch (err) {
+    console.warn("Failed to read social cache", err);
+    return null;
+  }
+};
+
+const writeCache = (
+  userId: string,
+  posts: PostRow[],
+  nextCursor: unknown,
+  liked: Record<string, boolean>
+) => {
+  try {
+    const payload: CachePayload = {
+      posts: serializePosts(posts),
+      nextCursor,
+      liked,
+    };
+    localStorage.setItem(cacheKey(userId), JSON.stringify(payload));
+  } catch (err) {
+    console.warn("Failed to write social cache", err);
+  }
+};
+
+const clearMemoryCache = () => {
+  postsCache = null;
+  cursorCache = null;
+  Object.keys(likedCache).forEach((k) => delete likedCache[k]);
+};
+
+const formatCreatedAt = (value: unknown) => {
+  if (!value) return "";
+  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === "string") return new Date(value).toLocaleString();
+  // Firestore Timestamp has toDate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((value as any).toDate) return (value as any).toDate().toLocaleString();
+  return "";
+};
 
 export default function SocialPage() {
   useUserGuard();
@@ -66,20 +142,44 @@ export default function SocialPage() {
   );
   const [composerOpen, setComposerOpen] = useState(false);
 
+  const syncCache = (postList: PostRow[], cursorVal: unknown = nextCursor) => {
+    if (!user?.uid) return;
+    postsCache = postList;
+    cursorCache = cursorVal;
+    writeCache(user.uid, postList, cursorVal, likedCache);
+  };
+
+  const updatePosts = (
+    updater: (prev: PostRow[]) => PostRow[],
+    cursorVal: unknown = nextCursor
+  ) => {
+    setPosts((prev) => {
+      const updated = updater(prev);
+      syncCache(updated, cursorVal);
+      return updated;
+    });
+  };
+
   const canPost = useMemo(
     () => content.trim().length > 0 || imageFile,
     [content, imageFile]
   );
 
-  const load = async (cursor?: unknown, append = false) => {
+  const load = async (
+    cursor?: unknown,
+    append = false,
+    options?: { allowMemoryCache?: boolean; background?: boolean }
+  ) => {
     if (!user) return;
+    const allowMemoryCache = options?.allowMemoryCache ?? true;
+    const background = options?.background ?? false;
     const setLoadingState = append ? setLoadingMore : setLoading;
-    setLoadingState(true);
+    if (!background) setLoadingState(true);
     try {
-      if (!cursor && postsCache) {
+      if (!cursor && allowMemoryCache && postsCache) {
         setPosts(postsCache);
         setNextCursor(cursorCache);
-        setLoadingState(false);
+        if (!background) setLoadingState(false);
         return;
       }
 
@@ -95,20 +195,44 @@ export default function SocialPage() {
       const merged = append ? [...posts, ...withLikes] : withLikes;
       setPosts(merged);
       setNextCursor(nextCursor);
-      if (!append) {
-        postsCache = merged;
-        cursorCache = nextCursor;
-      }
+      syncCache(merged, nextCursor);
     } catch (err) {
       console.error("Failed to load posts", err);
       if (!append) setPosts([]);
     } finally {
-      setLoadingState(false);
+      if (!background) setLoadingState(false);
     }
   };
 
   useEffect(() => {
-    load();
+    clearMemoryCache();
+
+    if (!user?.uid) {
+      setPosts([]);
+      setNextCursor(null);
+      setLoading(false);
+      return;
+    }
+
+    const cached = readCache(user.uid);
+    if (cached) {
+      const hydratedPosts = deserializePosts(cached.posts);
+      postsCache = hydratedPosts;
+      cursorCache = cached.nextCursor;
+      Object.assign(likedCache, cached.liked);
+      setPosts(hydratedPosts);
+      setNextCursor(cached.nextCursor);
+      setLoading(false);
+    } else {
+      setPosts([]);
+      setNextCursor(null);
+      setLoading(true);
+    }
+
+    load(undefined, false, {
+      allowMemoryCache: false,
+      background: !!cached,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
@@ -142,7 +266,7 @@ export default function SocialPage() {
         liked: false,
         createdAt: new Date(),
       };
-      setPosts((prev) => [newPost, ...prev]);
+      updatePosts((prev) => [newPost, ...prev]);
       setContent("");
       setImageFile(null);
     } catch (err) {
@@ -154,22 +278,23 @@ export default function SocialPage() {
 
   const handleLike = async (postId: string) => {
     if (!user) return;
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              liked: !p.liked,
-              likeCount: (p.likeCount || 0) + (p.liked ? -1 : 1),
-            }
-          : p
-      )
+    updatePosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const liked = !p.liked;
+        likedCache[postId] = liked;
+        return {
+          ...p,
+          liked,
+          likeCount: (p.likeCount || 0) + (p.liked ? -1 : 1),
+        };
+      })
     );
     try {
       await toggleSocialLike(postId, user.uid);
     } catch (err) {
       console.error("Failed to toggle like", err);
-      load();
+      load(undefined, false, { allowMemoryCache: false });
     }
   };
 
@@ -185,7 +310,7 @@ export default function SocialPage() {
         text,
       });
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
-      setPosts((prev) =>
+      updatePosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? { ...p, commentCount: (p.commentCount || 0) + 1 }
@@ -209,7 +334,7 @@ export default function SocialPage() {
         text: (c as any).text ?? "",
         createdAt: (c as any).createdAt,
       }));
-      setPosts((prev) =>
+      updatePosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? {
@@ -228,7 +353,7 @@ export default function SocialPage() {
   const toggleComments = async (postId: string) => {
     const post = posts.find((p) => p.id === postId);
     if (post?.showComments) {
-      setPosts((prev) =>
+      updatePosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, showComments: false } : p))
       );
     } else {
@@ -239,7 +364,7 @@ export default function SocialPage() {
   const handleDeletePost = async (postId: string) => {
     try {
       await deleteSocialPost(postId);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      updatePosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (err) {
       console.error("Failed to delete post", err);
     }
@@ -248,7 +373,7 @@ export default function SocialPage() {
   const handleDeleteComment = async (postId: string, commentId: string) => {
     try {
       await deleteSocialComment(postId, commentId);
-      setPosts((prev) =>
+      updatePosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? {
@@ -300,7 +425,7 @@ export default function SocialPage() {
         </div>
 
         {composerOpen && (
-          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-30 sm:p-6 space-y-4">
+          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-2 sm:p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg">
                 {user?.displayName?.[0] || "U"}
@@ -363,9 +488,7 @@ export default function SocialPage() {
                         {p.authorName || p.authorEmail || "User"}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {p.createdAt?.toDate
-                          ? p.createdAt.toDate().toLocaleString()
-                          : ""}
+                        {formatCreatedAt(p.createdAt)}
                       </p>
                     </div>
                   </div>
