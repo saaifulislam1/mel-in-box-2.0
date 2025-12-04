@@ -29,6 +29,7 @@ import {
   Send,
   Share2,
   Trash2,
+  X,
 } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
 
@@ -799,26 +800,25 @@ export default function SocialPage() {
 
       {viewerImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
           onClick={() => setViewerImage(null)}
         >
           <div
-            className="relative max-w-4xl w-full"
+            className="relative w-full max-w-4xl bg-white/5 rounded-3xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setViewerImage(null)}
-              className="absolute -top-10 right-0 text-white/80 hover:text-white"
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/70 text-white hover:bg-black/80 transition"
+              aria-label="Close image preview"
             >
-              Close
+              <X className="w-5 h-5" />
             </button>
-            <div className="overflow-hidden rounded-2xl bg-black/30 border border-white/10 shadow-2xl">
-              <img
-                src={viewerImage}
-                alt="Post preview"
-                className="w-full max-h-[80vh] object-contain bg-black"
-              />
-            </div>
+            <img
+              src={viewerImage}
+              alt="Post preview"
+              className="w-full max-h-[80vh] object-contain bg-black"
+            />
           </div>
         </div>
       )}
