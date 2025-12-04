@@ -652,7 +652,7 @@ export default function SocialPage() {
                     <img
                       src={p.imageURL}
                       alt="Post"
-                      className="w-full h-[230px] object-cover transition duration-150 hover:scale-[1.01]"
+                      className="w-full h-[430px] md:h-[550px] object-cover transition duration-150 hover:scale-[1.01]"
                     />
                   </button>
                 )}
