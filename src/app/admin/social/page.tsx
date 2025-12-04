@@ -42,6 +42,16 @@ export default function AdminSocialPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [commentDeleting, setCommentDeleting] = useState<
+    Record<string, boolean>
+  >({});
+
+  const MiniSpinner = () => (
+    <span
+      className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+      aria-label="Loading"
+    />
+  );
 
   const load = async (cursor?: unknown, append = false) => {
     const setLoader = append ? setLoadingMore : setLoading;
@@ -102,7 +112,16 @@ export default function AdminSocialPage() {
       return;
     }
     try {
-      const comments = await getSocialComments(postId, 20);
+      const commentsRaw = await getSocialComments(postId, 20);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comments: CommentRow[] = commentsRaw.map((c: any) => ({
+        id: c.id,
+        authorId: c.authorId ?? "",
+        authorEmail: c.authorEmail,
+        authorName: c.authorName,
+        text: c.text ?? "",
+        createdAt: c.createdAt,
+      }));
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, comments, show: true } : p))
       );
@@ -112,6 +131,7 @@ export default function AdminSocialPage() {
   };
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
+    setCommentDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
       await deleteSocialComment(postId, commentId);
       setPosts((prev) =>
@@ -127,6 +147,8 @@ export default function AdminSocialPage() {
       );
     } catch (err) {
       console.error("Failed to delete comment", err);
+    } finally {
+      setCommentDeleting((prev) => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -209,7 +231,11 @@ export default function AdminSocialPage() {
                   disabled={actionId === p.id}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500 text-white text-sm shadow hover:-translate-y-0.5 transition disabled:opacity-60"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {actionId === p.id ? (
+                    <MiniSpinner />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                   {actionId === p.id ? "Removing..." : "Delete post"}
                 </button>
               </div>
@@ -257,9 +283,14 @@ export default function AdminSocialPage() {
                         </div>
                         <button
                           onClick={() => handleDeleteComment(p.id, c.id)}
+                          disabled={commentDeleting[c.id]}
                           className="p-1 rounded-full text-rose-300 hover:bg-rose-500/20"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {commentDeleting[c.id] ? (
+                            <MiniSpinner />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     ))
@@ -271,7 +302,7 @@ export default function AdminSocialPage() {
         </div>
       )}
 
-      {nextCursor && (
+      {!!nextCursor && (
         <>
           <div ref={loadMoreRef} className="h-10" />
           <div className="flex justify-center">
