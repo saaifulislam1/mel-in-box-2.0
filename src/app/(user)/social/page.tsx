@@ -561,7 +561,9 @@ export default function SocialPage() {
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                   <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-pink-200 bg-white text-sm text-pink-600 cursor-pointer hover:border-pink-300">
                     <Camera className="w-4 h-4" />
-                    {imageFile ? imageFile.name : "Add Photo (optional)"}
+                    <span className="max-w-[140px] truncate">
+                      {imageFile ? imageFile.name : "Add Photo (optional)"}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
