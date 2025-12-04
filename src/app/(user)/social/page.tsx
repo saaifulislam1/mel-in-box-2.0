@@ -333,6 +333,7 @@ export default function SocialPage() {
       updatePosts((prev) => [newPost, ...prev]);
       setContent("");
       setImageFile(null);
+      setComposerOpen(false);
     } catch (err) {
       console.error("Failed to create post", err);
     } finally {
@@ -624,46 +625,67 @@ export default function SocialPage() {
           </div>
         </div>
 
+        {/* Composer modal to avoid page reflow */}
         {composerOpen && (
-          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-2  md:mx-30 sm:p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg">
-                {user?.displayName?.[0] || "U"}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            onClick={() => setComposerOpen(false)}
+          >
+            <section
+              className="rounded-3xl bg-white/95 border border-pink-200 shadow-2xl p-4 sm:p-6 space-y-4 w-full max-w-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-pink-700">
+                  Create post
+                </h2>
+                <button
+                  onClick={() => setComposerOpen(false)}
+                  className="p-2 rounded-full text-slate-500 hover:bg-slate-100"
+                  aria-label="Close composer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="flex-1">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={2}
-                  placeholder="Share your party memories and fun moments! 🎉"
-                  className="w-full rounded-2xl border border-pink-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                />
-                <div className="flex items-center gap-3 mt-3 flex-wrap">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-pink-200 bg-white text-sm text-pink-600 cursor-pointer hover:border-pink-300">
-                    <Camera className="w-4 h-4" />
-                    <span className="max-w-[140px] truncate">
-                      {imageFile ? imageFile.name : "Add Photo (optional)"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        setImageFile(e.target.files?.[0] || null)
-                      }
-                    />
-                  </label>
-                  <button
-                    onClick={handleCreate}
-                    disabled={!canPost || creating}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
-                  >
-                    {creating ? <Spinner label="Posting..." /> : "Post 🎉"}
-                  </button>
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg">
+                  {user?.displayName?.[0] || "U"}
+                </div>
+                <div className="flex-1">
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    rows={3}
+                    placeholder="Share your party memories and fun moments! 🎉"
+                    className="w-full rounded-2xl border border-pink-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                  />
+                  <div className="flex items-center gap-3 mt-3 flex-wrap">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-pink-200 bg-white text-sm text-pink-600 cursor-pointer hover:border-pink-300">
+                      <Camera className="w-4 h-4" />
+                      <span className="max-w-[140px] truncate">
+                        {imageFile ? imageFile.name : "Add Photo (optional)"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          setImageFile(e.target.files?.[0] || null)
+                        }
+                      />
+                    </label>
+                    <button
+                      onClick={handleCreate}
+                      disabled={!canPost || creating}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+                    >
+                      {creating ? <Spinner label="Posting..." /> : "Post 🎉"}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
         )}
 
         <section className="space-y-5 mt-6  md:px-30">
