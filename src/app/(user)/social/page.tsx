@@ -13,6 +13,7 @@ import {
   getSocialComments,
   getSocialPosts,
   hasUserLiked,
+  reportSocialContent,
   toggleSocialLike,
   type SocialPost,
 } from "@/lib/socialService";
@@ -170,6 +171,12 @@ export default function SocialPage() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [reporting, setReporting] = useState<
+    { type: "post"; postId: string } | { type: "comment"; postId: string; commentId: string } | null
+  >(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMessage, setReportMessage] = useState<string | null>(null);
 
   const syncCache = (postList: PostRow[], cursorVal: unknown = nextCursor) => {
     if (!user?.uid) return;
@@ -552,6 +559,29 @@ export default function SocialPage() {
     }
   };
 
+  const submitReport = async () => {
+    if (!user || !reporting || !reportReason.trim()) return;
+    setReportSubmitting(true);
+    try {
+      await reportSocialContent({
+        postId: reporting.postId,
+        commentId:
+          reporting.type === "comment" ? reporting.commentId : undefined,
+        reason: reportReason.trim(),
+        reporterId: user.uid,
+        reporterEmail: user.email || undefined,
+      });
+      setReportMessage("Report sent to admins. Thank you.");
+      setReporting(null);
+      setReportReason("");
+    } catch (err) {
+      console.error("Failed to send report", err);
+      setReportMessage("Could not send report. Please try again.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   return (
     <main className="px-4 space-y-8 bg-gradient-to-br  from-pink-100 via-rose-100 to-amber-50 min-h-screen -mx-4 sm:mx-0 pb-16 pt-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-0 mt-20">
@@ -708,6 +738,14 @@ export default function SocialPage() {
                     >
                       <Share2 className="w-4 h-4" />
                     </button>
+                    <button
+                      onClick={() =>
+                        setReporting({ type: "post", postId: p.id })
+                      }
+                      className="p-2 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 transition"
+                    >
+                      !
+                    </button>
                   </div>
                 </div>
                 {p.content && (
@@ -836,6 +874,20 @@ export default function SocialPage() {
                                           )}
                                         </button>
                                       )}
+                                      {c.authorId !== user?.uid && (
+                                        <button
+                                          onClick={() =>
+                                            setReporting({
+                                              type: "comment",
+                                              postId: p.id,
+                                              commentId: c.id as string,
+                                            })
+                                          }
+                                          className="p-1 rounded-full text-amber-600 hover:bg-amber-50"
+                                        >
+                                          !
+                                        </button>
+                                      )}
                                     </div>
                                   ))}
                                 {total > visibleCount && (
@@ -896,6 +948,59 @@ export default function SocialPage() {
               alt="Post preview"
               className="w-full max-h-[80vh] object-contain bg-black"
             />
+          </div>
+        </div>
+      )}
+
+      {reporting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={() => setReporting(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-800">
+                Report {reporting.type === "comment" ? "comment" : "post"}
+              </h3>
+              <button
+                onClick={() => setReporting(null)}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600">
+              Tell us why this {reporting.type} is inappropriate.
+            </p>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-200"
+              placeholder="Reason"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setReporting(null)}
+                className="px-4 py-2 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50"
+                disabled={reportSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReport}
+                disabled={reportSubmitting || !reportReason.trim()}
+                className="px-4 py-2 rounded-full bg-rose-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {reportSubmitting ? <Spinner label="Sending..." /> : "Send"}
+              </button>
+            </div>
+            {reportMessage && (
+              <p className="text-xs text-slate-600">{reportMessage}</p>
+            )}
           </div>
         </div>
       )}

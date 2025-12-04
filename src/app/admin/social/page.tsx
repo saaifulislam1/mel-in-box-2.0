@@ -10,6 +10,8 @@ import {
   deleteSocialPost,
   getSocialComments,
   getSocialPosts,
+  getSocialReports,
+  resolveSocialReport,
   type SocialPost,
 } from "@/lib/socialService";
 import {
@@ -33,6 +35,16 @@ type CommentRow = {
   text: string;
   createdAt?: unknown;
 };
+type ReportRow = {
+  id: string;
+  postId: string;
+  commentId?: string;
+  reason: string;
+  reporterId?: string;
+  reporterEmail?: string;
+  status?: string;
+  createdAt?: unknown;
+};
 
 export default function AdminSocialPage() {
   useAdminGuard();
@@ -45,6 +57,9 @@ export default function AdminSocialPage() {
   const [commentDeleting, setCommentDeleting] = useState<
     Record<string, boolean>
   >({});
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<ReportRow | null>(null);
 
   const MiniSpinner = () => (
     <span
@@ -72,6 +87,23 @@ export default function AdminSocialPage() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  const loadReports = async () => {
+    setReportsLoading(true);
+    try {
+      const data = await getSocialReports(50);
+      setReports(data as ReportRow[]);
+    } catch (err) {
+      console.error("Failed to load reports", err);
+      setReports([]);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
   }, []);
 
   useEffect(() => {
@@ -152,11 +184,33 @@ export default function AdminSocialPage() {
     }
   };
 
+  const handleResolveReport = async (reportId: string) => {
+    try {
+      await resolveSocialReport(reportId);
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId ? { ...r, status: "resolved" } : r
+        )
+      );
+    } catch (err) {
+      console.error("Failed to resolve report", err);
+    }
+  };
+
+  const openReport = async (report: ReportRow) => {
+    setSelectedReport(report);
+    // ensure comments loaded if needed
+    if (report.commentId) {
+      await toggleComments(report.postId);
+    }
+  };
+
   const handleRefresh = () => {
     setLoading(true);
     setPosts([]);
     setNextCursor(null);
     load();
+    loadReports();
   };
 
   return (
@@ -168,10 +222,10 @@ export default function AdminSocialPage() {
         </div>
         <button
           onClick={handleRefresh}
-          disabled={loading}
+          disabled={loading || reportsLoading}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 bg-white/5 text-white text-sm hover:bg-white/10 transition disabled:opacity-60"
         >
-          {loading ? (
+          {loading || reportsLoading ? (
             <Spinner label="Refreshing..." />
           ) : (
             <RefreshCw className="w-4 h-4" />

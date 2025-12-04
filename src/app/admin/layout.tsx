@@ -13,6 +13,7 @@ import {
   Images,
   LayoutDashboard,
   Menu,
+  AlertCircle,
   PartyPopper,
   Upload,
   X,
@@ -86,6 +87,13 @@ export default function AdminLayout({
         label: "Social",
         description: "Moderate community posts",
         icon: <Menu className="w-4 h-4" />,
+        match: "prefix",
+      },
+      {
+        href: "/admin/reports",
+        label: "Reports",
+        description: "Review flagged posts/comments",
+        icon: <AlertCircle className="w-4 h-4" />,
         match: "prefix",
       },
       {

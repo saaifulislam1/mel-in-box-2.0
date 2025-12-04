@@ -39,6 +39,17 @@ export type SocialComment = {
   createdAt?: any;
 };
 
+export type SocialReport = {
+  postId: string;
+  commentId?: string;
+  reason: string;
+  reporterId?: string;
+  reporterEmail?: string;
+  status?: "open" | "resolved";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createdAt?: any;
+};
+
 const postsCol = collection(db, "socialPosts");
 const postDoc = (id: string) => doc(db, "socialPosts", id);
 const likesCol = (postId: string) => collection(postDoc(postId), "likes");
@@ -46,6 +57,7 @@ const likeDoc = (postId: string, userId: string) =>
   doc(db, "socialPosts", postId, "likes", userId);
 const commentsCol = (postId: string) =>
   collection(postDoc(postId), "comments");
+const reportsCol = collection(db, "socialReports");
 
 const cleanUndefined = (obj: Record<string, unknown>) =>
   Object.fromEntries(
@@ -127,4 +139,41 @@ export async function deleteSocialComment(postId: string, commentId: string) {
 
 export async function deleteSocialPost(postId: string) {
   await deleteDoc(postDoc(postId));
+}
+
+export async function reportSocialContent(data: SocialReport) {
+  const payload = cleanUndefined({
+    ...data,
+    status: "open",
+    createdAt: serverTimestamp(),
+  });
+  await addDoc(reportsCol, payload);
+}
+
+export async function getSocialReports(limitCount = 20): Promise<
+  (SocialReport & { id: string })[]
+> {
+  const q = query(
+    reportsCol,
+    orderBy("createdAt", "desc"),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as SocialReport) }));
+}
+
+export async function resolveSocialReport(reportId: string) {
+  await updateDoc(doc(db, "socialReports", reportId), { status: "resolved" });
+}
+
+export async function getSocialPostById(id: string) {
+  const snap = await getDoc(postDoc(id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as SocialPost & { id: string };
+}
+
+export async function getSocialCommentById(postId: string, commentId: string) {
+  const snap = await getDoc(doc(db, "socialPosts", postId, "comments", commentId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as SocialComment & { id: string };
 }
