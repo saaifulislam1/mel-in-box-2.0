@@ -6,8 +6,9 @@ import { useAuth } from "@/app/AuthProvider";
 import useUserGuard from "@/hooks/useUserGuard";
 import Link from "next/link";
 import { CalendarClock, Mail, Shield, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
+import { getSpellingProgress } from "@/lib/spellingService";
 
 export default function UserProfilePage() {
   useUserGuard();
@@ -16,10 +17,29 @@ export default function UserProfilePage() {
   const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [gamePoints, setGamePoints] = useState<number | null>(null);
 
   const displayName = user?.displayName || "";
   const initialFirst = displayName.split(" ")[0] || "";
   const initialLast = displayName.split(" ").slice(1).join(" ");
+
+  useEffect(() => {
+    let mounted = true;
+    const loadPoints = async () => {
+      if (!user) return;
+      try {
+        const data = await getSpellingProgress(user.uid);
+        if (!mounted) return;
+        setGamePoints(data?.totalPoints ?? 0);
+      } catch (err) {
+        console.error("Failed to load game points", err);
+      }
+    };
+    loadPoints();
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +71,15 @@ export default function UserProfilePage() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center text-white text-lg">
               {user?.displayName?.[0] || "U"}
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-indigo-500" />
+              <div>
+                <p className="text-xs text-slate-500">Game points</p>
+                <p className="font-semibold">
+                  {gamePoints !== null ? gamePoints : "—"}
+                </p>
+              </div>
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">

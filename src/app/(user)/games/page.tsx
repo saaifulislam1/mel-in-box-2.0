@@ -16,6 +16,7 @@ type Game = {
 };
 
 const games: Game[] = [
+  { id: "spelling-adventure", title: "Spelling Adventure", description: "Guess the picture and spell it right.", difficulty: "Medium", color: "from-indigo-500 via-violet-500 to-blue-500", icon: "🔤" },
   { id: "puzzle-paradise", title: "Puzzle Paradise", description: "Solve colorful puzzles!", difficulty: "Easy", color: "from-fuchsia-500 via-violet-500 to-blue-500", icon: "🧩" },
   { id: "memory-match", title: "Memory Match", description: "Match the cards!", difficulty: "Medium", color: "from-teal-400 via-sky-400 to-blue-500", icon: "🃏" },
   { id: "rainbow-colors", title: "Rainbow Colors", description: "Color magical pictures!", difficulty: "Easy", color: "from-rose-500 via-pink-500 to-orange-400", icon: "🎨" },
@@ -83,10 +84,13 @@ export default function GamesPage() {
                   <Star className="w-4 h-4" />
                   <span>Kid-friendly</span>
                 </div>
-                <button className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-rose-700 font-semibold shadow hover:-translate-y-0.5 transition">
+                <a
+                  href={`/games/${game.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-rose-700 font-semibold shadow hover:-translate-y-0.5 transition"
+                >
                   <Play className="w-4 h-4" />
                   Play now
-                </button>
+                </a>
               </div>
             </article>
           ))}
