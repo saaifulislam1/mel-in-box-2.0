@@ -166,6 +166,7 @@ export default function SocialPage() {
     Record<string, boolean>
   >({});
   const [composerOpen, setComposerOpen] = useState(false);
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
 
   const syncCache = (postList: PostRow[], cursorVal: unknown = nextCursor) => {
     if (!user?.uid) return;
@@ -185,10 +186,7 @@ export default function SocialPage() {
     });
   };
 
-  const canPost = useMemo(
-    () => content.trim().length > 0 || imageFile,
-    [content, imageFile]
-  );
+  const canPost = useMemo(() => content.trim().length > 0, [content]);
 
   const load = async (
     cursor?: unknown,
@@ -264,6 +262,14 @@ export default function SocialPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewerImage(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const handleCreate = async () => {
     if (!user || !canPost) return;
     setCreating(true);
@@ -280,7 +286,7 @@ export default function SocialPage() {
         authorEmail: user.email || undefined,
         authorName: user.displayName || undefined,
         content: content.trim(),
-        imageURL,
+        ...(imageURL ? { imageURL } : {}),
       });
       const newPost: PostRow = {
         id: ref.id,
@@ -288,7 +294,7 @@ export default function SocialPage() {
         authorEmail: user.email || undefined,
         authorName: user.displayName || undefined,
         content: content.trim(),
-        imageURL,
+        ...(imageURL ? { imageURL } : {}),
         likeCount: 0,
         commentCount: 0,
         liked: false,
@@ -588,7 +594,9 @@ export default function SocialPage() {
             posts.map((p) => (
               <article
                 key={p.id}
-                className="rounded-3xl bg-white shadow-lg border border-pink-200 w-full min-h-[410px] mx-0 p-5 space-y-3"
+                className={`rounded-3xl bg-white shadow-lg border border-pink-200 w-full mx-0 p-5 space-y-3 ${
+                  p.imageURL ? "min-h-[410px]" : ""
+                }`}
                 id={p.id}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -633,13 +641,17 @@ export default function SocialPage() {
                   </p>
                 )}
                 {p.imageURL && (
-                  <div className="overflow-hidden rounded-2xl border border-pink-100">
+                  <button
+                    type="button"
+                    onClick={() => setViewerImage(p.imageURL || null)}
+                    className="overflow-hidden rounded-2xl border border-pink-100 w-full block focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  >
                     <img
                       src={p.imageURL}
                       alt="Post"
-                      className="w-full h-[230px] object-cover"
+                      className="w-full h-[230px] object-cover transition duration-150 hover:scale-[1.01]"
                     />
-                  </div>
+                  </button>
                 )}
 
                 <div className="flex items-center justify-between text-sm text-slate-600">
@@ -784,6 +796,32 @@ export default function SocialPage() {
           </div>
         ) : null}
       </div>
+
+      {viewerImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          onClick={() => setViewerImage(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setViewerImage(null)}
+              className="absolute -top-10 right-0 text-white/80 hover:text-white"
+            >
+              Close
+            </button>
+            <div className="overflow-hidden rounded-2xl bg-black/30 border border-white/10 shadow-2xl">
+              <img
+                src={viewerImage}
+                alt="Post preview"
+                className="w-full max-h-[80vh] object-contain bg-black"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

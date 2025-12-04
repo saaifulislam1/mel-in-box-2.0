@@ -47,13 +47,19 @@ const likeDoc = (postId: string, userId: string) =>
 const commentsCol = (postId: string) =>
   collection(postDoc(postId), "comments");
 
+const cleanUndefined = (obj: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined)
+  );
+
 export async function createSocialPost(data: SocialPost) {
-  return await addDoc(postsCol, {
+  const payload = cleanUndefined({
     ...data,
     likeCount: 0,
     commentCount: 0,
     createdAt: serverTimestamp(),
   });
+  return await addDoc(postsCol, payload);
 }
 
 export async function getSocialPosts(
@@ -96,10 +102,11 @@ export async function addSocialComment(
   postId: string,
   data: SocialComment
 ) {
-  await addDoc(commentsCol(postId), {
+  const payload = cleanUndefined({
     ...data,
     createdAt: serverTimestamp(),
   });
+  await addDoc(commentsCol(postId), payload);
   await updateDoc(postDoc(postId), { commentCount: increment(1) });
 }
 
