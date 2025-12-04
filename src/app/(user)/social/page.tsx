@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   addSocialComment,
@@ -30,6 +30,7 @@ import {
   Share2,
   Trash2,
   X,
+  RefreshCw,
 } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
 
@@ -168,6 +169,7 @@ export default function SocialPage() {
   >({});
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const syncCache = (postList: PostRow[], cursorVal: unknown = nextCursor) => {
     if (!user?.uid) return;
@@ -189,47 +191,50 @@ export default function SocialPage() {
 
   const canPost = useMemo(() => content.trim().length > 0, [content]);
 
-  const load = async (
-    cursor?: unknown,
-    append = false,
-    options?: { allowMemoryCache?: boolean; background?: boolean }
-  ) => {
-    if (!user) return;
-    const allowMemoryCache = options?.allowMemoryCache ?? true;
-    const background = options?.background ?? false;
-    const setLoadingState = append ? setLoadingMore : setLoading;
-    if (!background) setLoadingState(true);
-    try {
-      if (!cursor && allowMemoryCache && postsCache) {
-        setPosts(postsCache);
-        setNextCursor(cursorCache);
-        if (!background) setLoadingState(false);
-        return;
-      }
+  const load = useCallback(
+    async (
+      cursor?: unknown,
+      append = false,
+      options?: { allowMemoryCache?: boolean; background?: boolean }
+    ) => {
+      if (!user) return;
+      const allowMemoryCache = options?.allowMemoryCache ?? true;
+      const background = options?.background ?? false;
+      const setLoadingState = append ? setLoadingMore : setLoading;
+      if (!background) setLoadingState(true);
+      try {
+        if (!cursor && allowMemoryCache && postsCache) {
+          setPosts(postsCache);
+          setNextCursor(cursorCache);
+          if (!background) setLoadingState(false);
+          return;
+        }
 
-      const { posts: data, nextCursor } = await getSocialPosts(
-        POSTS_PAGE_SIZE,
-        cursor
-      );
-      const withLikes = await Promise.all(
-        data.map(async (p) => {
-          const liked =
-            likedCache[p.id] ?? (await hasUserLiked(p.id, user.uid));
-          likedCache[p.id] = liked;
-          return { ...(p as PostRow), liked };
-        })
-      );
-      const merged = append ? [...posts, ...withLikes] : withLikes;
-      setPosts(merged);
-      setNextCursor(nextCursor);
-      syncCache(merged, nextCursor);
-    } catch (err) {
-      console.error("Failed to load posts", err);
-      if (!append) setPosts([]);
-    } finally {
-      if (!background) setLoadingState(false);
-    }
-  };
+        const { posts: data, nextCursor } = await getSocialPosts(
+          POSTS_PAGE_SIZE,
+          cursor
+        );
+        const withLikes = await Promise.all(
+          data.map(async (p) => {
+            const liked =
+              likedCache[p.id] ?? (await hasUserLiked(p.id, user.uid));
+            likedCache[p.id] = liked;
+            return { ...(p as PostRow), liked };
+          })
+        );
+        const merged = append ? [...posts, ...withLikes] : withLikes;
+        setPosts(merged);
+        setNextCursor(nextCursor);
+        syncCache(merged, nextCursor);
+      } catch (err) {
+        console.error("Failed to load posts", err);
+        if (!append) setPosts([]);
+      } finally {
+        if (!background) setLoadingState(false);
+      }
+    },
+    [user, posts]
+  );
 
   useEffect(() => {
     clearMemoryCache();
@@ -270,6 +275,23 @@ export default function SocialPage() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  useEffect(() => {
+    if (!nextCursor) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !loadingMore && !loading) {
+          load(nextCursor, true, { allowMemoryCache: false });
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [nextCursor, load, loadingMore, loading]);
 
   const handleCreate = async () => {
     if (!user || !canPost) return;
@@ -503,6 +525,13 @@ export default function SocialPage() {
     }
   };
 
+  const handleRefresh = () => {
+    if (!user) return;
+    clearMemoryCache();
+    setLoading(true);
+    load(undefined, false, { allowMemoryCache: false });
+  };
+
   const handleShare = async (postId: string) => {
     try {
       await navigator.clipboard.writeText(
@@ -529,19 +558,31 @@ export default function SocialPage() {
           title="Social Fun"
           icon={Handshake}
         />
-        <div className="flex  mt-6 w-full items-center justify-center mb-6 gap-6">
-          {/* <div className="flex items-center ">
-            <h1 className="text-xl text-center  font-semibold text-pink-700">
-              Social Fun
-            </h1>
-          </div> */}
-          <button
-            onClick={() => setComposerOpen((v) => !v)}
-            className="p-3 items-end rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow hover:-translate-y-0.5 transition"
-            aria-label="Create post"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+        <div className="flex mt-6 w-full items-center justify-between mb-6 gap-4 flex-wrap">
+          <div className="flex items-center gap-2 text-pink-700 font-semibold">
+            <p>Latest posts</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-pink-200 bg-white text-pink-600 shadow-sm hover:-translate-y-0.5 transition disabled:opacity-60"
+            >
+              {loading ? (
+                <MiniSpinner />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              Refresh
+            </button>
+            <button
+              onClick={() => setComposerOpen((v) => !v)}
+              className="p-3 items-end rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow hover:-translate-y-0.5 transition"
+              aria-label="Create post"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {composerOpen && (
@@ -588,7 +629,29 @@ export default function SocialPage() {
 
         <section className="space-y-5 mt-6  md:px-30">
           {loading ? (
-            <Spinner label="Loading posts..." />
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-3xl bg-white shadow-lg border border-pink-100 p-5 space-y-4 animate-pulse"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-pink-100" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 w-32 bg-pink-100 rounded-full" />
+                      <div className="h-3 w-20 bg-pink-50 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="h-3 w-full bg-pink-50 rounded-full" />
+                  <div className="h-3 w-5/6 bg-pink-50 rounded-full" />
+                  <div className="h-56 w-full bg-pink-50 rounded-2xl" />
+                  <div className="flex justify-between">
+                    <div className="h-8 w-20 bg-pink-50 rounded-full" />
+                    <div className="h-8 w-24 bg-pink-50 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : posts.length === 0 ? (
             <div className="rounded-2xl border border-pink-200 bg-white/80 p-5 text-pink-700">
               No posts yet. Be the first to share!
@@ -788,15 +851,18 @@ export default function SocialPage() {
         </section>
 
         {nextCursor ? (
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => load(nextCursor, true)}
-              disabled={loadingMore}
-              className="px-4 py-2 rounded-full bg-white border border-pink-200 text-pink-700 shadow hover:-translate-y-0.5 transition disabled:opacity-60"
-            >
-              {loadingMore ? <Spinner label="Loading..." /> : "Load more"}
-            </button>
-          </div>
+          <>
+            <div ref={loadMoreRef} className="h-10" />
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => load(nextCursor, true)}
+                disabled={loadingMore}
+                className="px-4 py-2 rounded-full bg-white border border-pink-200 text-pink-700 shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {loadingMore ? <Spinner label="Loading..." /> : "Load more"}
+              </button>
+            </div>
+          </>
         ) : null}
       </div>
 

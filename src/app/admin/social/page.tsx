@@ -19,7 +19,11 @@ import {
   Trash2,
 } from "lucide-react";
 
-type PostRow = SocialPost & { id: string; comments?: CommentRow[]; show?: boolean };
+type PostRow = SocialPost & {
+  id: string;
+  comments?: CommentRow[];
+  show?: boolean;
+};
 type CommentRow = {
   id: string;
   authorId: string;
@@ -81,9 +85,7 @@ export default function AdminSocialPage() {
     try {
       const comments = await getSocialComments(postId, 20);
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, comments, show: true } : p
-        )
+        prev.map((p) => (p.id === postId ? { ...p, comments, show: true } : p))
       );
     } catch (err) {
       console.error("Failed to load comments", err);
@@ -159,11 +161,11 @@ export default function AdminSocialPage() {
                 </p>
               )}
               {p.imageURL && (
-                <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="overflow-hidden rounded-xl border border-white/10 w-fit">
                   <img
                     src={p.imageURL}
                     alt="Post"
-                    className="w-full h-auto object-cover"
+                    className="w-[550px] h-[300px] object-cover"
                   />
                 </div>
               )}
