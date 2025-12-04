@@ -79,7 +79,7 @@ export default function StoryTimePage() {
       <BookOpen className="absolute right-4 top-13 w-5 h-5 text-emerald-600" />
       {/* decorative accents */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%)] pointer-events-none" />
-      <div className="relative max-w-5xl mx-auto pt-5 px-3 sm:px-4 space-y-6">
+      <div className="relative max-w-5xl mx-auto pt-5  sm:px-4 space-y-6">
         <div className="flex flex-wrap items-center justify-center gap-3">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-emerald-700 font-semibold text-base sm:text-lg">
             <PlayCircle className="w-5 h-5" />
@@ -112,7 +112,7 @@ export default function StoryTimePage() {
                   </div>
                 </div>
                 {v.duration && (
-                  <span className="absolute bottom-2 right-2 text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full">
+                  <span className="absolute bottom-3 right-3 text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full opacity-75">
                     {v.duration}
                   </span>
                 )}

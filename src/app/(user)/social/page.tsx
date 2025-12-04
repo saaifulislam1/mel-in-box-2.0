@@ -59,6 +59,13 @@ const COMMENT_INITIAL_VISIBLE = 3;
 const COMMENT_INCREMENT = 5;
 const COMMENT_FETCH_SIZE = 50;
 
+const MiniSpinner = () => (
+  <span
+    className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+    aria-label="Loading"
+  />
+);
+
 // Simple in-memory cache to reduce reload cost
 let postsCache: PostRow[] | null = null;
 let cursorCache: unknown | null = null;
@@ -146,6 +153,16 @@ export default function SocialPage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
     {}
   );
+  const [commentSubmitting, setCommentSubmitting] = useState<
+    Record<string, boolean>
+  >({});
+  const [commentErrors, setCommentErrors] = useState<Record<string, string>>(
+    {}
+  );
+  const [postDeleting, setPostDeleting] = useState<Record<string, boolean>>({});
+  const [commentDeleting, setCommentDeleting] = useState<
+    Record<string, boolean>
+  >({});
   const [composerOpen, setComposerOpen] = useState(false);
 
   const syncCache = (postList: PostRow[], cursorVal: unknown = nextCursor) => {
@@ -311,6 +328,35 @@ export default function SocialPage() {
     if (!user) return;
     const text = commentInputs[postId]?.trim();
     if (!text) return;
+    const optimisticComment: CommentRow = {
+      id: `temp-${Date.now()}`,
+      authorId: user.uid,
+      authorEmail: user.email || undefined,
+      authorName: user.displayName || undefined,
+      text,
+      createdAt: new Date(),
+    };
+    setCommentErrors((prev) => ({ ...prev, [postId]: "" }));
+    setCommentSubmitting((prev) => ({ ...prev, [postId]: true }));
+    setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+    updatePosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const comments = p.comments || [];
+        const updated = [optimisticComment, ...comments];
+        const visible = Math.min(
+          updated.length,
+          (p.visibleComments ?? COMMENT_INITIAL_VISIBLE) + 1
+        );
+        return {
+          ...p,
+          comments: updated,
+          commentCount: (p.commentCount || 0) + 1,
+          showComments: true,
+          visibleComments: visible,
+        };
+      })
+    );
     try {
       await addSocialComment(postId, {
         authorId: user.uid,
@@ -318,17 +364,28 @@ export default function SocialPage() {
         authorName: user.displayName || undefined,
         text,
       });
-      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
-      updatePosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, commentCount: (p.commentCount || 0) + 1 }
-            : p
-        )
-      );
       await loadComments(postId);
     } catch (err) {
       console.error("Failed to add comment", err);
+      setCommentErrors((prev) => ({
+        ...prev,
+        [postId]: "Failed to post comment. Please retry.",
+      }));
+      updatePosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: (p.comments || []).filter(
+                  (c) => c.id !== optimisticComment.id
+                ),
+                commentCount: Math.max((p.commentCount || 1) - 1, 0),
+              }
+            : p
+        )
+      );
+    } finally {
+      setCommentSubmitting((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -404,15 +461,19 @@ export default function SocialPage() {
   };
 
   const handleDeletePost = async (postId: string) => {
+    setPostDeleting((prev) => ({ ...prev, [postId]: true }));
     try {
       await deleteSocialPost(postId);
       updatePosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (err) {
       console.error("Failed to delete post", err);
+    } finally {
+      setPostDeleting((prev) => ({ ...prev, [postId]: false }));
     }
   };
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
+    setCommentDeleting((prev) => ({ ...prev, [commentId]: true }));
     try {
       await deleteSocialComment(postId, commentId);
       updatePosts((prev) =>
@@ -428,6 +489,8 @@ export default function SocialPage() {
       );
     } catch (err) {
       console.error("Failed to delete comment", err);
+    } finally {
+      setCommentDeleting((prev) => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -538,9 +601,14 @@ export default function SocialPage() {
                     {p.authorId === user?.uid && (
                       <button
                         onClick={() => handleDeletePost(p.id)}
-                        className="p-2 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
+                        disabled={postDeleting[p.id]}
+                        className="p-2 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 transition disabled:opacity-60"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {postDeleting[p.id] ? (
+                          <MiniSpinner />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     )}
                     <button
@@ -607,12 +675,24 @@ export default function SocialPage() {
                       />
                       <button
                         onClick={() => handleAddComment(p.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-pink-500 text-white text-sm"
+                        disabled={commentSubmitting[p.id]}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-pink-500 text-white text-sm disabled:opacity-60"
                       >
-                        <Send className="w-4 h-4" />
-                        Send
+                        {commentSubmitting[p.id] ? (
+                          <Spinner label="Sending..." />
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Send
+                          </>
+                        )}
                       </button>
                     </div>
+                    {commentErrors[p.id] ? (
+                      <p className="text-xs text-rose-500">
+                        {commentErrors[p.id]}
+                      </p>
+                    ) : null}
                     <div className="space-y-2">
                       {(p.comments || []).length === 0 ? (
                         <p className="text-xs text-slate-500">
@@ -651,9 +731,14 @@ export default function SocialPage() {
                                               c.id as string
                                             )
                                           }
-                                          className="p-1 rounded-full text-rose-500 hover:bg-rose-50"
+                                          disabled={commentDeleting[c.id]}
+                                          className="p-1 rounded-full text-rose-500 hover:bg-rose-50 disabled:opacity-60"
                                         >
-                                          <Trash2 className="w-4 h-4" />
+                                          {commentDeleting[c.id] ? (
+                                            <MiniSpinner />
+                                          ) : (
+                                            <Trash2 className="w-4 h-4" />
+                                          )}
                                         </button>
                                       )}
                                     </div>
