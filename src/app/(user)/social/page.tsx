@@ -533,11 +533,20 @@ export default function SocialPage() {
   };
 
   const handleShare = async (postId: string) => {
+    const url = `${window.location.origin}/social#${postId}`;
     try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/social#${postId}`
-      );
-      alert("Link copied to clipboard");
+      if (navigator.share) {
+        await navigator.share({
+          title: "Check out this post",
+          text: "Take a look at this social post!",
+          url,
+        });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        alert("Link copied to clipboard");
+      } else {
+        window.prompt("Copy this link", url);
+      }
     } catch (err) {
       console.error("Failed to copy link", err);
     }
