@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { Spinner } from "@/components/Spinner";
 import {
@@ -17,6 +17,7 @@ import {
   CalendarClock,
   MessageSquare,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 
 type PostRow = SocialPost & {
@@ -40,6 +41,7 @@ export default function AdminSocialPage() {
   const [nextCursor, setNextCursor] = useState<unknown>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const load = async (cursor?: unknown, append = false) => {
     const setLoader = append ? setLoadingMore : setLoading;
@@ -61,6 +63,23 @@ export default function AdminSocialPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (!nextCursor) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !loadingMore && !loading) {
+          load(nextCursor, true);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, loading]);
 
   const handleDeletePost = async (postId: string) => {
     setActionId(postId);
@@ -111,15 +130,54 @@ export default function AdminSocialPage() {
     }
   };
 
+  const handleRefresh = () => {
+    setLoading(true);
+    setPosts([]);
+    setNextCursor(null);
+    load();
+  };
+
   return (
     <main className="space-y-6">
-      <div className="flex items-center gap-2 text-slate-200">
-        <CalendarClock className="w-5 h-5 text-amber-300" />
-        <h1 className="text-xl font-semibold">Social moderation</h1>
+      <div className="flex items-center gap-3 text-slate-200 justify-between flex-wrap">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="w-5 h-5 text-amber-300" />
+          <h1 className="text-xl font-semibold">Social moderation</h1>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 bg-white/5 text-white text-sm hover:bg-white/10 transition disabled:opacity-60"
+        >
+          {loading ? (
+            <Spinner label="Refreshing..." />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Refresh
+        </button>
       </div>
 
       {loading ? (
-        <Spinner label="Loading posts..." />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg space-y-3 animate-pulse"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="h-3 w-40 bg-white/20 rounded-full" />
+                  <div className="h-3 w-24 bg-white/10 rounded-full" />
+                </div>
+                <div className="h-9 w-28 bg-white/10 rounded-xl" />
+              </div>
+              <div className="h-3 w-full bg-white/10 rounded-full" />
+              <div className="h-3 w-5/6 bg-white/10 rounded-full" />
+              <div className="h-48 w-full bg-white/5 rounded-xl" />
+            </div>
+          ))}
+        </div>
       ) : posts.length === 0 ? (
         <div className="flex items-center gap-2 text-amber-100 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 text-sm">
           <AlertCircle className="w-4 h-4" />
@@ -214,15 +272,18 @@ export default function AdminSocialPage() {
       )}
 
       {nextCursor && (
-        <div className="flex justify-center">
-          <button
-            onClick={() => load(nextCursor, true)}
-            disabled={loadingMore}
-            className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition disabled:opacity-60"
-          >
-            {loadingMore ? <Spinner label="Loading..." /> : "Load more"}
-          </button>
-        </div>
+        <>
+          <div ref={loadMoreRef} className="h-10" />
+          <div className="flex justify-center">
+            <button
+              onClick={() => load(nextCursor, true)}
+              disabled={loadingMore}
+              className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition disabled:opacity-60"
+            >
+              {loadingMore ? <Spinner label="Loading..." /> : "Load more"}
+            </button>
+          </div>
+        </>
       )}
     </main>
   );
