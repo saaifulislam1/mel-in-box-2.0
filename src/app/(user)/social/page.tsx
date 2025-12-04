@@ -242,7 +242,7 @@ export default function SocialPage() {
     if (!user?.uid) {
       setPosts([]);
       setNextCursor(null);
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
@@ -254,7 +254,7 @@ export default function SocialPage() {
       Object.assign(likedCache, cached.liked);
       setPosts(hydratedPosts);
       setNextCursor(cached.nextCursor);
-      setLoading(false);
+      setLoading(hydratedPosts.length === 0);
     } else {
       setPosts([]);
       setNextCursor(null);

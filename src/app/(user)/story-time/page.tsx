@@ -31,6 +31,7 @@ type VideoItem = VideoData & {
   videoURL?: string;
   views?: number;
 };
+type CachePayload = { videos: VideoItem[]; updatedAt: number };
 
 const formatViews = (views: number) => {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
@@ -43,6 +44,7 @@ export default function StoryTimePage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [selected, setSelected] = useState<VideoItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const cacheKey = "story-time-cache";
 
   const tagColor = useMemo(
     () => ["bg-pink-100 text-pink-600", "bg-purple-100 text-purple-600"],
@@ -52,15 +54,36 @@ export default function StoryTimePage() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadVideos = async () => {
-      setLoading(true);
+    const loadVideos = async (options?: { background?: boolean }) => {
+      const background = options?.background ?? false;
+      if (!background) setLoading(true);
       const data = (await getAllVideos()) as VideoItem[];
       if (!isMounted) return;
       setVideos(data);
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({ videos: data, updatedAt: Date.now() } as CachePayload)
+      );
       setLoading(false);
     };
 
-    loadVideos();
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
+      if (raw) {
+        const cached = JSON.parse(raw) as CachePayload;
+        if (cached?.videos?.length) {
+          setVideos(cached.videos);
+          setLoading(false);
+          loadVideos({ background: true });
+        } else {
+          loadVideos();
+        }
+      } else {
+        loadVideos();
+      }
+    } catch {
+      loadVideos();
+    }
 
     return () => {
       isMounted = false;
@@ -98,8 +121,24 @@ export default function StoryTimePage() {
         />
 
         {loading && (
-          <div className="flex justify-center py-4">
-            <Spinner label="Loading videos..." className="text-emerald-700" />
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="w-full bg-white/80 rounded-2xl shadow-md flex flex-col sm:flex-row gap-3 overflow-hidden border border-emerald-50 p-3 animate-pulse"
+              >
+                <div className="w-full sm:w-44 h-44 sm:h-32 bg-emerald-100 rounded-xl" />
+                <div className="flex-1 flex flex-col gap-3 py-2">
+                  <div className="h-4 w-2/3 bg-emerald-100 rounded-full" />
+                  <div className="h-3 w-full bg-emerald-50 rounded-full" />
+                  <div className="h-3 w-5/6 bg-emerald-50 rounded-full" />
+                  <div className="flex gap-2">
+                    <div className="h-6 w-20 bg-emerald-50 rounded-full" />
+                    <div className="h-6 w-16 bg-emerald-50 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
