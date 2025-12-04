@@ -35,6 +35,7 @@ type PostRow = SocialPost & {
   liked?: boolean;
   comments?: CommentRow[];
   showComments?: boolean;
+  visibleComments?: number;
 };
 
 type CommentRow = {
@@ -52,6 +53,11 @@ type CachePayload = {
   nextCursor: unknown;
   liked: Record<string, boolean>;
 };
+
+const POSTS_PAGE_SIZE = 10;
+const COMMENT_INITIAL_VISIBLE = 3;
+const COMMENT_INCREMENT = 5;
+const COMMENT_FETCH_SIZE = 50;
 
 // Simple in-memory cache to reduce reload cost
 let postsCache: PostRow[] | null = null;
@@ -183,7 +189,10 @@ export default function SocialPage() {
         return;
       }
 
-      const { posts: data, nextCursor } = await getSocialPosts(5, cursor);
+      const { posts: data, nextCursor } = await getSocialPosts(
+        POSTS_PAGE_SIZE,
+        cursor
+      );
       const withLikes = await Promise.all(
         data.map(async (p) => {
           const liked =
@@ -325,7 +334,7 @@ export default function SocialPage() {
 
   const loadComments = async (postId: string) => {
     try {
-      const comments = await getSocialComments(postId, 20);
+      const comments = await getSocialComments(postId, COMMENT_FETCH_SIZE);
       const typedComments: CommentRow[] = comments.map((c) => ({
         id: c.id as string,
         authorId: (c as any).authorId ?? "",
@@ -341,6 +350,10 @@ export default function SocialPage() {
                 ...p,
                 comments: typedComments,
                 showComments: true,
+                visibleComments: Math.max(
+                  p.visibleComments ?? 0,
+                  Math.min(COMMENT_INITIAL_VISIBLE, typedComments.length)
+                ),
               }
             : p
         )
@@ -357,8 +370,37 @@ export default function SocialPage() {
         prev.map((p) => (p.id === postId ? { ...p, showComments: false } : p))
       );
     } else {
-      await loadComments(postId);
+      if (post?.comments?.length) {
+        updatePosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  showComments: true,
+                  visibleComments: Math.max(
+                    p.visibleComments ?? 0,
+                    Math.min(COMMENT_INITIAL_VISIBLE, p.comments?.length || 0)
+                  ),
+                }
+              : p
+          )
+        );
+      } else {
+        await loadComments(postId);
+      }
     }
+  };
+
+  const handleShowMoreComments = (postId: string) => {
+    updatePosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const total = p.comments?.length || 0;
+        const current = p.visibleComments ?? 0;
+        const next = Math.min(total, current + COMMENT_INCREMENT);
+        return { ...p, visibleComments: next };
+      })
+    );
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -425,7 +467,7 @@ export default function SocialPage() {
         </div>
 
         {composerOpen && (
-          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-2 sm:p-6 space-y-4">
+          <section className="rounded-3xl bg-white/90 border border-pink-200 shadow-lg p-4 mx-2  md:mx-30 sm:p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg">
                 {user?.displayName?.[0] || "U"}
@@ -475,7 +517,7 @@ export default function SocialPage() {
             posts.map((p) => (
               <article
                 key={p.id}
-                className="rounded-3xl bg-white shadow-lg border border-pink-200 w-full h-[410px]  mx-0 p-5 space-y-3"
+                className="rounded-3xl bg-white shadow-lg border border-pink-200 w-full min-h-[410px] mx-0 p-5 space-y-3"
                 id={p.id}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -577,29 +619,57 @@ export default function SocialPage() {
                           No comments yet.
                         </p>
                       ) : (
-                        (p.comments || []).map((c) => (
-                          <div
-                            key={c.id}
-                            className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 border border-pink-100"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-slate-800">
-                                {c.authorName || c.authorEmail || "User"}
-                              </p>
-                              <p className="text-xs text-slate-500">{c.text}</p>
-                            </div>
-                            {c.authorId === user?.uid && (
-                              <button
-                                onClick={() =>
-                                  handleDeleteComment(p.id, c.id as string)
-                                }
-                                className="p-1 rounded-full text-rose-500 hover:bg-rose-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))
+                        <>
+                          {(() => {
+                            const total = p.comments?.length || 0;
+                            const visibleCount =
+                              p.visibleComments ?? COMMENT_INITIAL_VISIBLE;
+                            return (
+                              <>
+                                {(p.comments || [])
+                                  .slice(0, visibleCount)
+                                  .map((c) => (
+                                    <div
+                                      key={c.id}
+                                      className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 border border-pink-100"
+                                    >
+                                      <div>
+                                        <p className="text-sm font-semibold text-slate-800">
+                                          {c.authorName ||
+                                            c.authorEmail ||
+                                            "User"}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                          {c.text}
+                                        </p>
+                                      </div>
+                                      {c.authorId === user?.uid && (
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteComment(
+                                              p.id,
+                                              c.id as string
+                                            )
+                                          }
+                                          className="p-1 rounded-full text-rose-500 hover:bg-rose-50"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                {total > visibleCount && (
+                                  <button
+                                    onClick={() => handleShowMoreComments(p.id)}
+                                    className="text-xs font-semibold text-pink-600 hover:text-pink-700"
+                                  >
+                                    Show more comments
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
                   </div>
