@@ -12,7 +12,7 @@ import {
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/AuthProvider";
-import { ArrowLeft, Lock, LogIn, Shield, Sparkles } from "lucide-react";
+import { Lock, LogIn, Shield, Sparkles } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
 const getAdminEmails = (): string[] => {
@@ -92,13 +92,6 @@ export default function AdminLoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.25),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.2),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(236,72,153,0.18),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex justify-between items-center mb-10">
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-slate-100 border border-white/15 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back Home
-          </button>
           <div className="flex items-center gap-2 text-slate-200">
             <Shield className="w-5 h-5 text-emerald-300" />
             <span className="text-sm">Admin Access</span>

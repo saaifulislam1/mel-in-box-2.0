@@ -6,7 +6,7 @@ import { useState, FormEvent } from "react";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { createVideo, uploadFile } from "@/lib/videoService";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileVideo, Loader2, Save, Tags } from "lucide-react";
+import { FileVideo, Loader2, Save, Tags } from "lucide-react";
 
 export default function UploadVideoPage() {
   useAdminGuard();
@@ -52,25 +52,9 @@ export default function UploadVideoPage() {
 
   return (
     <main className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          onClick={() => router.push("/")}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back Home
-        </button>
-        <button
-          onClick={() => router.push("/admin/story-time")}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <div className="flex items-center gap-2 text-slate-200">
-          <FileVideo className="w-5 h-5 text-emerald-300" />
-          <h1 className="text-xl font-semibold">Upload Story Time Video</h1>
-        </div>
+      <div className="flex items-center gap-2 text-slate-200">
+        <FileVideo className="w-5 h-5 text-emerald-300" />
+        <h1 className="text-xl font-semibold">Upload Story Time Video</h1>
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur shadow-2xl p-6 space-y-4">

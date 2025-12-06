@@ -7,26 +7,26 @@ import { useEffect, useState } from "react";
 import { getAllVideos, deleteVideo } from "@/lib/videoService";
 import {
   AlertCircle,
-  ArrowLeft,
   Clock3,
   Film,
   Play,
   Tag,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
 
 export default function AdminStoryTimePage() {
   useAdminGuard();
-  const router = useRouter();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // The real function we will reuse everywhere
   const loadVideos = async (isMounted = true) => {
@@ -57,25 +57,9 @@ export default function AdminStoryTimePage() {
   return (
     <main className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back Home
-          </button>
-          <button
-            onClick={() => router.push("/admin")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="flex items-center gap-2 text-slate-200">
-            <Film className="w-5 h-5 text-emerald-300" />
-            <h1 className="text-xl font-semibold">Story Time Library</h1>
-          </div>
+        <div className="flex items-center gap-2 text-slate-200">
+          <Film className="w-5 h-5 text-emerald-300" />
+          <h1 className="text-xl font-semibold">Story Time Library</h1>
         </div>
         <Link
           href="/admin/story-time/upload"
@@ -130,20 +114,16 @@ export default function AdminStoryTimePage() {
                   {v.duration || "Video"}
                 </span>
                 <button
-                  onClick={async () => {
-                    try {
-                      await deleteVideo(v.id);
-                      setMessage("Video deleted");
-                      loadVideos();
-                    } catch (err) {
-                      console.error("Failed to delete video", err);
-                      setMessage("Unable to delete video right now.");
-                    }
-                  }}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/70 transition"
+                  onClick={() => setConfirmId(v.id)}
+                  disabled={deletingId === v.id}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/70 transition disabled:opacity-60"
                   aria-label="Delete video"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {deletingId === v.id ? (
+                    <Spinner label="Deleting..." />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               <div className="p-4 flex flex-col gap-2 flex-1">
@@ -179,6 +159,63 @@ export default function AdminStoryTimePage() {
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {confirmId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-slate-900 text-white rounded-2xl border border-white/10 shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-rose-300" />
+                <h3 className="text-lg font-semibold">Delete video?</h3>
+              </div>
+              <button
+                onClick={() => setConfirmId(null)}
+                className="p-1 rounded-full hover:bg-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-300">
+              This will remove the video from Story Time. This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="px-4 py-2 rounded-full border border-white/15 text-slate-200 hover:bg-white/5 transition"
+                disabled={deletingId === confirmId}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirmId) return;
+                  setDeletingId(confirmId);
+                  try {
+                    await deleteVideo(confirmId);
+                    setMessage("Video deleted");
+                    setVideos((prev) => prev.filter((v) => v.id !== confirmId));
+                  } catch (err) {
+                    console.error("Failed to delete video", err);
+                    setMessage("Unable to delete video right now.");
+                  } finally {
+                    setDeletingId(null);
+                    setConfirmId(null);
+                  }
+                }}
+                disabled={deletingId === confirmId}
+                className="px-4 py-2 rounded-full bg-rose-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {deletingId === confirmId ? (
+                  <Spinner label="Deleting..." />
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
