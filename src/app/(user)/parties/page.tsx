@@ -4,17 +4,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Sparkles,
-  Clock,
-  Users,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Clock, Users, ArrowRight } from "lucide-react";
 import { getAllPartyPackages, type PartyPackage } from "@/lib/partyService";
 import { Spinner } from "@/components/Spinner";
+import HeadingSection from "@/components/HeadingSection";
 
 type PackageItem = PartyPackage & { id: string };
+type CachePayload = { packages: PackageItem[]; updatedAt: number };
 
 const gradients = [
   "from-pink-500 via-rose-500 to-orange-400",
@@ -27,19 +23,40 @@ export default function KidPartiesPage() {
   const router = useRouter();
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const cacheKey = "parties-cache";
 
   const gradientBg = useMemo(
     () => "bg-gradient-to-br from-purple-100 via-lilac-100 to-sky-100",
     []
   );
 
+  const readCache = (): CachePayload | null => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? (JSON.parse(raw) as CachePayload) : null;
+    } catch (err) {
+      console.warn("Failed to read parties cache", err);
+      return null;
+    }
+  };
+
+  const writeCache = (payload: CachePayload) => {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(payload));
+    } catch (err) {
+      console.warn("Failed to write parties cache", err);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
+    const load = async (background = false) => {
+      if (!background) setLoading(true);
       try {
         const data = await getAllPartyPackages();
         if (!mounted) return;
         setPackages(data as PackageItem[]);
+        writeCache({ packages: data as PackageItem[], updatedAt: Date.now() });
       } catch (err) {
         console.error("Failed to load party packages", err);
         if (mounted) setPackages([]);
@@ -47,19 +64,27 @@ export default function KidPartiesPage() {
         if (mounted) setLoading(false);
       }
     };
-    load();
+    const cached = readCache();
+    if (cached?.packages?.length) {
+      setPackages(cached.packages);
+      setLoading(false);
+      load(true);
+    } else {
+      load();
+    }
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <main
-      className={`min-h-screen ${gradientBg} text-slate-800 pt-24 pb-24 px-3 sm:px-5`}
+      className={`min-h-screen ${gradientBg} text-slate-800 pt-24 pb-24 px-4 sm:px-5`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.7),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.5),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-5xl w-full mx-auto space-y-6">
-        <div className="flex items-center justify-center gap-3">
+        {/* <div className="flex items-center justify-center gap-3">
           <ArrowLeft
             className="w-5 h-5 text-purple-500 cursor-pointer"
             onClick={() => router.push("/")}
@@ -68,10 +93,16 @@ export default function KidPartiesPage() {
             <Sparkles className="w-5 h-5" />
             <span className="font-semibold whitespace-nowrap">Kid Parties</span>
           </div>
-        </div>
+        </div> */}
+        <HeadingSection
+          title="Kid Parties"
+          href="/"
+          textColor="text-purple-600"
+          icon={Sparkles}
+        />
         <p className="text-center text-slate-600 max-w-2xl mx-auto text-sm sm:text-base px-2">
-          Choose a magical party package. Tap "Book This Party" to pick your
-          date, time, location, and complete payment securely.
+          Choose a magical party package. Tap Book This Party to pick your date,
+          time, location, and complete payment securely.
         </p>
 
         {loading ? (

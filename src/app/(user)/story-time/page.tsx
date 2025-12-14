@@ -3,7 +3,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, Clock3, Eye, PlayCircle, X } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Clock3,
+  Eye,
+  PlayCircle,
+  X,
+  SquareArrowLeft,
+} from "lucide-react";
 import {
   getAllVideos,
   incrementViewCount,
@@ -11,6 +19,8 @@ import {
 } from "@/lib/videoService";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
+import Link from "next/link";
+import HeadingSection from "@/components/HeadingSection";
 
 type VideoItem = VideoData & {
   id: string;
@@ -21,6 +31,9 @@ type VideoItem = VideoData & {
   videoURL?: string;
   views?: number;
 };
+type CachePayload = { videos: VideoItem[]; updatedAt: number };
+
+const STORY_CACHE_KEY = "story-time-cache";
 
 const formatViews = (views: number) => {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
@@ -42,13 +55,39 @@ export default function StoryTimePage() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadVideos = async () => {
-      setLoading(true);
+    const loadVideos = async (options?: { background?: boolean }) => {
+      const background = options?.background ?? false;
+      if (!background) setLoading(true);
       const data = (await getAllVideos()) as VideoItem[];
       if (!isMounted) return;
       setVideos(data);
+      localStorage.setItem(
+        STORY_CACHE_KEY,
+        JSON.stringify({ videos: data, updatedAt: Date.now() } as CachePayload)
+      );
       setLoading(false);
     };
+
+    const cached =
+      typeof window !== "undefined"
+        ? localStorage.getItem(STORY_CACHE_KEY)
+        : null;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as CachePayload;
+        if (parsed?.videos?.length) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setVideos(parsed.videos);
+          setLoading(false);
+          loadVideos({ background: true });
+          return () => {
+            isMounted = false;
+          };
+        }
+      } catch {
+        // ignore parse errors, fall through to full load
+      }
+    }
 
     loadVideos();
 
@@ -79,17 +118,33 @@ export default function StoryTimePage() {
       <BookOpen className="absolute right-4 top-13 w-5 h-5 text-emerald-600" />
       {/* decorative accents */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%)] pointer-events-none" />
-      <div className="relative max-w-5xl mx-auto pt-5 px-3 sm:px-4 space-y-6">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-emerald-700 font-semibold text-base sm:text-lg">
-            <PlayCircle className="w-5 h-5" />
-            <span className="font-semibold whitespace-nowrap">Story Time</span>
-          </div>
-        </div>
+      <div className="relative max-w-5xl mx-auto pt-5  sm:px-4 space-y-6">
+        <HeadingSection
+          href="/"
+          title="Story Time"
+          textColor="text-emerald-700"
+          icon={PlayCircle}
+        />
 
         {loading && (
-          <div className="flex justify-center py-4">
-            <Spinner label="Loading videos..." className="text-emerald-700" />
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="w-full bg-white/80 rounded-2xl shadow-md flex flex-col sm:flex-row gap-3 overflow-hidden border border-emerald-50 p-3 animate-pulse"
+              >
+                <div className="w-full sm:w-44 h-44 sm:h-32 bg-emerald-100 rounded-xl" />
+                <div className="flex-1 flex flex-col gap-3 py-2">
+                  <div className="h-4 w-2/3 bg-emerald-100 rounded-full" />
+                  <div className="h-3 w-full bg-emerald-50 rounded-full" />
+                  <div className="h-3 w-5/6 bg-emerald-50 rounded-full" />
+                  <div className="flex gap-2">
+                    <div className="h-6 w-20 bg-emerald-50 rounded-full" />
+                    <div className="h-6 w-16 bg-emerald-50 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -112,7 +167,7 @@ export default function StoryTimePage() {
                   </div>
                 </div>
                 {v.duration && (
-                  <span className="absolute bottom-2 right-2 text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full">
+                  <span className="absolute bottom-3 right-3 text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full opacity-75">
                     {v.duration}
                   </span>
                 )}

@@ -7,12 +7,14 @@ import "../globals.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/app/AuthProvider";
 import {
   CalendarClock,
   Film,
   Images,
   LayoutDashboard,
   Menu,
+  AlertCircle,
   PartyPopper,
   Upload,
   X,
@@ -34,6 +36,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [unreadBookings, setUnreadBookings] = useState(0);
   const [open, setOpen] = useState(false);
   const isAuthPage = pathname?.startsWith("/admin/login");
@@ -82,6 +85,20 @@ export default function AdminLayout({
         icon: <Upload className="w-4 h-4" />,
       },
       {
+        href: "/admin/social",
+        label: "Social",
+        description: "Moderate community posts",
+        icon: <Menu className="w-4 h-4" />,
+        match: "prefix",
+      },
+      {
+        href: "/admin/reports",
+        label: "Reports",
+        description: "Review flagged posts/comments",
+        icon: <AlertCircle className="w-4 h-4" />,
+        match: "prefix",
+      },
+      {
         href: "/admin/parties",
         label: "Party Packages",
         description: "Create and edit packages",
@@ -94,6 +111,11 @@ export default function AdminLayout({
 
   useEffect(() => {
     const loadUnread = async () => {
+      // Avoid Firestore calls when unauthenticated or on the login page.
+      if (isAuthPage || authLoading || !user || !isAdmin) {
+        setUnreadBookings(0);
+        return;
+      }
       try {
         const bookings = await getAllPartyBookings();
         const unread = bookings.filter(
@@ -109,7 +131,7 @@ export default function AdminLayout({
     };
 
     loadUnread();
-  }, []);
+  }, [isAuthPage, authLoading, user, isAdmin]);
 
   if (isAuthPage) {
     return (

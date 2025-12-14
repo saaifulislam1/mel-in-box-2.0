@@ -18,6 +18,7 @@ import {
   Save,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { Spinner } from "@/components/Spinner";
@@ -45,6 +46,8 @@ export default function AdminGalleryPage() {
   const [category, setCategory] = useState("");
   const [categoryColor, setCategoryColor] = useState("bg-sky-500");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = async (isMounted = true) => {
     if (isMounted) setLoading(true);
@@ -118,15 +121,17 @@ export default function AdminGalleryPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    const ok = window.confirm("Delete this photo from the gallery?");
-    if (!ok) return;
+    setDeletingId(id);
     try {
       await deletePhoto(id);
       setMessage("Photo deleted");
-      load();
+      setItems((prev) => prev.filter((i) => i.id !== id));
     } catch (err) {
       console.error("Failed to delete photo", err);
       setMessage("Unable to delete photo right now.");
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
     }
   };
 
@@ -192,11 +197,15 @@ export default function AdminGalleryPage() {
                   {item.category}
                 </span>
                 <button
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => setConfirmId(item.id)}
                   className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/70 transition"
                   aria-label="Delete photo"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {deletingId === item.id ? (
+                    <Spinner label="Deleting..." />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               <div className="p-4 space-y-2">
@@ -318,6 +327,49 @@ export default function AdminGalleryPage() {
                     <Save className="w-4 h-4" />
                     Save changes
                   </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-slate-900 text-white rounded-2xl border border-white/10 shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-rose-300" />
+                <h3 className="text-lg font-semibold">Delete photo?</h3>
+              </div>
+              <button
+                onClick={() => setConfirmId(null)}
+                className="p-1 rounded-full hover:bg-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-300">
+              This will remove the photo from the gallery. This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="px-4 py-2 rounded-full border border-white/15 text-slate-200 hover:bg-white/5 transition"
+                disabled={deletingId === confirmId}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmId)}
+                disabled={deletingId === confirmId}
+                className="px-4 py-2 rounded-full bg-rose-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-60"
+              >
+                {deletingId === confirmId ? (
+                  <Spinner label="Deleting..." />
+                ) : (
+                  "Delete"
                 )}
               </button>
             </div>

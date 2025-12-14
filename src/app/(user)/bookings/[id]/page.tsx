@@ -113,13 +113,13 @@ export default function UserBookingDetail({
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10  mt-20 space-y-6 pt-20 bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl shadow-sm">
+    <main className="max-w-4xl mx-auto px-4  py-10  mt-20 space-y-6 pt-20  rounded-3xl shadow-sm">
       <div className="flex items-center gap-2 text-slate-800">
         <CalendarClock className="w-5 h-5 text-amber-600" />
         <h1 className="text-2xl font-semibold">Booking</h1>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white shadow-sm p-5 space-y-4">
+      <section className="rounded-3xl border border-slate-200  shadow-sm p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-lg font-semibold text-slate-900">

@@ -8,13 +8,17 @@ import {
   Download,
   Heart,
   Image as ImageIcon,
+  PlayCircle,
   Share2,
+  SquareArrowLeft,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getAllPhotos, updatePhotoLikes } from "@/lib/galleryService";
 import { Spinner } from "@/components/Spinner";
 import { useAuth } from "@/app/AuthProvider";
+import Link from "next/link";
+import HeadingSection from "@/components/HeadingSection";
 
 type Photo = {
   id: string;
@@ -28,6 +32,9 @@ type Photo = {
   downloads?: number;
   shareUrl?: string;
 };
+type CachePayload = { photos: Omit<Photo, "loved">[]; updatedAt: number };
+
+const GALLERY_CACHE_KEY = "gallery-cache";
 
 export default function GalleryPage() {
   const router = useRouter();
@@ -47,7 +54,9 @@ export default function GalleryPage() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadPhotos = async () => {
+    const loadPhotos = async (options?: { background?: boolean }) => {
+      const background = options?.background ?? false;
+      if (!background) setLoading(true);
       try {
         const data = await getAllPhotos();
         if (!isMounted) return;
@@ -70,6 +79,7 @@ export default function GalleryPage() {
         }));
         setLikedMap(stored);
         setPhotos(withLikes);
+        writeCache({ photos: mapped, updatedAt: Date.now() });
       } catch (err) {
         console.error("Failed to load gallery", err);
         setPhotos([]);
@@ -78,7 +88,20 @@ export default function GalleryPage() {
       }
     };
 
-    loadPhotos();
+    const cached = readCache();
+    if (cached?.photos?.length) {
+      const stored = getStoredLikes();
+      const withLikes = cached.photos.map((p) => ({
+        ...p,
+        loved: stored[p.id] ?? false,
+      }));
+      setLikedMap(stored);
+      setPhotos(withLikes as Photo[]);
+      setLoading(false);
+      loadPhotos({ background: true });
+    } else {
+      loadPhotos();
+    }
     return () => {
       isMounted = false;
     };
@@ -218,25 +241,41 @@ export default function GalleryPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(255,255,255,0.7),transparent_35%),radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.55),transparent_30%),radial-gradient(circle_at_40%_80%,rgba(255,255,255,0.4),transparent_30%)] pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto px-4 pt-6 sm:pt-10 space-y-5">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-sm text-sky-700 font-semibold text-base sm:text-lg">
-            <ImageIcon className="w-5 h-5 shrink-0" />
-            <span className="font-semibold whitespace-nowrap">
-              Photo Gallery
-            </span>
-          </div>
-        </div>
+        <HeadingSection
+          title="Photo Gallery"
+          href="/"
+          textColor="text-sky-700"
+          icon={ImageIcon}
+        />
+        <div className="flex flex-wrap items-center justify-center gap-3"></div>
         <p className="text-center text-slate-600 max-w-2xl mx-auto px-2 text-sm sm:text-base">
           Relive the most magical party moments. Love photos, share with
           friends, download keepsakes, and tap to view each picture up close.
         </p>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {loading && (
-            <div className="col-span-full flex justify-center">
-              <Spinner label="Loading photos..." className="text-slate-700" />
-            </div>
-          )}
+          {loading &&
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="group relative bg-white/90 rounded-3xl shadow-lg overflow-hidden border border-slate-100 animate-pulse"
+              >
+                <div className="relative h-64 w-full bg-slate-100" />
+                <div className="p-4 flex items-start justify-between gap-3">
+                  <div className="space-y-2 w-full">
+                    <div className="h-4 bg-slate-100 rounded-full w-1/2" />
+                    <div className="h-3 bg-slate-100 rounded-full w-1/3" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 bg-slate-100 rounded-full" />
+                    <div className="h-9 w-9 bg-slate-100 rounded-full" />
+                  </div>
+                </div>
+                <div className="px-4 pb-4 flex items-center gap-2">
+                  <div className="h-9 w-20 bg-slate-100 rounded-full" />
+                </div>
+              </div>
+            ))}
           {!loading && photos.length === 0 && (
             <div className="col-span-full">
               <div className="rounded-3xl border border-dashed border-slate-200 bg-white/80 shadow p-6 flex flex-col items-center gap-3 text-center">
@@ -415,3 +454,22 @@ export default function GalleryPage() {
     </main>
   );
 }
+  const readCache = (): CachePayload | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(GALLERY_CACHE_KEY);
+      return raw ? (JSON.parse(raw) as CachePayload) : null;
+    } catch (err) {
+      console.warn("Failed to read gallery cache", err);
+      return null;
+    }
+  };
+
+  const writeCache = (payload: CachePayload) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify(payload));
+    } catch (err) {
+      console.warn("Failed to write gallery cache", err);
+    }
+  };

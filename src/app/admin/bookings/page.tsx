@@ -224,11 +224,13 @@ export default function AdminBookingsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {pageItems.map((b) => (
-              <article
-                key={b.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg space-y-3"
-              >
+            {pageItems.map((b) => {
+              const pending = b.status === "pending_payment";
+              return (
+                <article
+                  key={b.id}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg space-y-3"
+                >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2">
                     {!b.read && (
@@ -289,10 +291,12 @@ export default function AdminBookingsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  {/* Disable all actions except "read" when payment is pending */}
                   <button
                     onClick={() => updateStatus(b.id, "accepted")}
                     disabled={
                       actionId === b.id ||
+                      pending ||
                       b.status === "canceled" ||
                       b.status === "accepted" ||
                       b.status === "completed"
@@ -310,6 +314,7 @@ export default function AdminBookingsPage() {
                     onClick={() => updateStatus(b.id, "completed")}
                     disabled={
                       actionId === b.id ||
+                      pending ||
                       b.status === "canceled" ||
                       b.status === "completed"
                     }
@@ -320,7 +325,9 @@ export default function AdminBookingsPage() {
                   </button>
                   <button
                     onClick={() => setConfirmId(b.id)}
-                    disabled={actionId === b.id || b.status === "canceled"}
+                    disabled={
+                      actionId === b.id || b.status === "canceled" || pending
+                    }
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20 hover:bg-white/15 transition disabled:opacity-60"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -335,8 +342,9 @@ export default function AdminBookingsPage() {
                     {b.read ? "Read" : "Mark as read"}
                   </button>
                 </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
 
