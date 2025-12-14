@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
+import { useAuth } from "@/app/AuthProvider";
 import { Spinner } from "@/components/Spinner";
 import {
   deleteSocialComment,
@@ -48,6 +49,7 @@ type ReportRow = {
 
 export default function AdminSocialPage() {
   useAdminGuard();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<unknown>(null);
@@ -69,6 +71,7 @@ export default function AdminSocialPage() {
   );
 
   const load = async (cursor?: unknown, append = false) => {
+    if (!user) return;
     const setLoader = append ? setLoadingMore : setLoading;
     setLoader(true);
     try {
@@ -86,10 +89,13 @@ export default function AdminSocialPage() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    if (!authLoading && user && isAdmin) {
+      load();
+    }
+  }, [authLoading, user, isAdmin]);
 
   const loadReports = async () => {
+    if (!user) return;
     setReportsLoading(true);
     try {
       const data = await getSocialReports(50);
@@ -103,8 +109,10 @@ export default function AdminSocialPage() {
   };
 
   useEffect(() => {
-    loadReports();
-  }, []);
+    if (!authLoading && user && isAdmin) {
+      loadReports();
+    }
+  }, [authLoading, user, isAdmin]);
 
   useEffect(() => {
     if (!nextCursor) return;
