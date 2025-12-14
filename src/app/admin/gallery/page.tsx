@@ -13,7 +13,6 @@ import {
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
-  ArrowLeft,
   Image as ImageIcon,
   Pencil,
   Save,
@@ -21,7 +20,6 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
 
 type GalleryItem = {
@@ -36,7 +34,6 @@ type GalleryItem = {
 
 export default function AdminGalleryPage() {
   useAdminGuard();
-  const router = useRouter();
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -136,25 +133,9 @@ export default function AdminGalleryPage() {
   return (
     <main className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => router.push("/")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back Home
-          </button>
-          <button
-            onClick={() => router.push("/admin")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-slate-200 border border-white/10 hover:bg-white/15 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="flex items-center gap-2 text-slate-200">
-            <ImageIcon className="w-5 h-5 text-sky-300" />
-            <h1 className="text-xl font-semibold">Gallery Management</h1>
-          </div>
+        <div className="flex items-center gap-2 text-slate-200">
+          <ImageIcon className="w-5 h-5 text-sky-300" />
+          <h1 className="text-xl font-semibold">Gallery Management</h1>
         </div>
         <Link
           href="/admin/gallery/upload"

@@ -4,11 +4,36 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getPartyBooking, updatePartyBooking } from "@/lib/partyService";
+import { Spinner } from "@/components/Spinner";
 
 export default function PartySuccessPage() {
   const params = useSearchParams();
   const router = useRouter();
   const bookingId = params.get("bookingId");
+  const [marking, setMarking] = useState(false);
+
+  useEffect(() => {
+    const markPaid = async () => {
+      if (!bookingId) return;
+      setMarking(true);
+      try {
+        const booking = await getPartyBooking(bookingId);
+        if (booking) {
+          await updatePartyBooking(bookingId, {
+            status: booking.status === "accepted" ? "accepted" : "paid",
+            amountPaid: booking.packagePrice ?? booking.amountPaid ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to mark booking as paid", err);
+      } finally {
+        setMarking(false);
+      }
+    };
+    markPaid();
+  }, [bookingId]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-100 via-emerald-100 to-sky-100 text-slate-800 pt-24 pb-24 px-3 sm:px-5">
@@ -37,6 +62,11 @@ export default function PartySuccessPage() {
             <p className="text-sm text-slate-500">
               Booking ID: <span className="font-mono">{bookingId}</span>
             </p>
+          )}
+          {marking && (
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <Spinner label="Updating status..." />
+            </div>
           )}
         </div>
       </div>

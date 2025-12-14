@@ -7,6 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Settings, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function UserNavbar() {
   const router = useRouter();
@@ -17,10 +18,10 @@ export default function UserNavbar() {
   };
 
   return (
-    <header className="w-full px-6 py-4">
-      <div className="max-w-2xl mx-auto flex items-center justify-between gap-6">
+    <header className="w-full px-6 py-3">
+      <div className="max-w-4xl mx-auto flex items-center justify-between gap-6 ">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-200/60">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-200/60 shrink-0">
             <User className="w-6 h-6 text-white" />
           </div>
           <div className="text-sm">
@@ -32,6 +33,12 @@ export default function UserNavbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/bookings"
+            className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold shadow hover:-translate-y-0.5 transition"
+          >
+            My bookings
+          </Link>
           <button className="p-2 bg-white rounded-full shadow-lg shadow-purple-200/60 hover:opacity-90 transition">
             <Settings className="w-6 h-6 text-purple-600" />
           </button>
