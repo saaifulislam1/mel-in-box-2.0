@@ -1,0 +1,433 @@
+// src/app/(user)/dress/page.tsx
+
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  BookOpen,
+  Clock3,
+  GraduationCap,
+  Heart,
+  PlayCircle,
+  ShieldCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Users,
+  Video,
+} from "lucide-react";
+import HeadingSection from "@/components/HeadingSection";
+import { getAllCourses, type CourseData } from "@/lib/courseService";
+import { useDressCart } from "@/hooks/useDressCart";
+import Link from "next/link";
+
+type Course = CourseData & {
+  id: string;
+  rating?: number;
+};
+
+type CachePayload = { courses: Course[]; updatedAt: number };
+
+const CACHE_KEY = "dress-courses-cache";
+
+const formatPrice = (price?: number) =>
+  typeof price === "number" ? `$${price.toFixed(2)}` : "$0.00";
+
+export default function DressPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selected, setSelected] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+  const { items, addItem, isInCart } = useDressCart();
+
+  const badges = useMemo(
+    () => ({
+      Beginner: "bg-emerald-100 text-emerald-700",
+      Intermediate: "bg-amber-100 text-amber-700",
+      Advanced: "bg-red-100 text-red-700",
+    }),
+    []
+  );
+
+  const loadCourses = async (options?: { background?: boolean }) => {
+    const background = options?.background ?? false;
+    if (!background) setLoading(true);
+    try {
+      const data = (await getAllCourses()) as Course[];
+      const normalized = data.map((c) => ({
+        id: c.id,
+        title: c.title ?? "Untitled Course",
+        description: c.description ?? "",
+        price: Number(c.price) || 0,
+        duration: c.duration ?? "45 mins",
+        level: c.level ?? "Beginner",
+        lessons: Number(c.lessons) || 0,
+        students: Number(c.students) || 0,
+        rating: c.rating ? Number(c.rating) : 4.9,
+        tags: Array.isArray(c.tags) ? c.tags : [],
+        highlights: Array.isArray(c.highlights) ? c.highlights : [],
+        thumbnailURL: c.thumbnailURL || "/images/mel-logo.png",
+        previewURL: c.previewURL || "",
+        previewHeadline: c.previewHeadline || "Preview this course",
+      }));
+      setCourses(normalized);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({
+            courses: normalized,
+            updatedAt: Date.now(),
+          } as CachePayload)
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load courses", err);
+      setCourses([]);
+    } finally {
+      if (!background) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const cached =
+      typeof window !== "undefined"
+        ? (localStorage.getItem(CACHE_KEY) as string | null)
+        : null;
+
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as CachePayload;
+        if (parsed?.courses?.length) {
+          setCourses(parsed.courses);
+          setLoading(false);
+          loadCourses({ background: true });
+          return;
+        }
+      } catch {
+        // ignore and fall through
+      }
+    }
+
+    loadCourses();
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const handleAddToCart = (course: Course) => {
+    addItem(course);
+    setToast(`${course.title} added to cart`);
+  };
+
+  return (
+    <main className="relative min-h-screen bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 text-amber-900 px-4 pb-16 pt-24 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_30%)] pointer-events-none" />
+
+      <div className="fixed right-4 top-28 z-30">
+        <Link
+          href="/dress/cart"
+          className="relative inline-flex items-center gap-2 rounded-full bg-amber-500 text-white px-4 py-2 shadow-lg shadow-amber-200/60 hover:-translate-y-0.5 transition"
+        >
+          <ShoppingCart className="w-5 h-5" />
+          <span className="text-sm font-semibold">
+            Cart {items.length > 0 ? `(${items.length})` : ""}
+          </span>
+          {items.length > 0 && (
+            <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-white text-amber-600 text-xs font-bold flex items-center justify-center shadow">
+              {items.length}
+            </span>
+          )}
+        </Link>
+      </div>
+
+      <div className="relative max-w-6xl mx-auto space-y-6">
+        <HeadingSection
+          href="/"
+          title="Dress Up Box"
+          textColor="text-amber-700"
+          icon={ShoppingBag}
+        />
+
+        <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.9fr] gap-4 lg:gap-6">
+          <div className="bg-white/90 rounded-3xl p-6 shadow-xl border border-amber-50 space-y-4 relative overflow-hidden">
+            <div className="absolute right-3 top-3 text-amber-300">
+              <Sparkles className="w-8 h-8" />
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
+              <ShieldCheck className="w-4 h-4" />
+              Premium Courses, Kid Friendly
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-amber-800">
+                  Learn magical dress-up skills with Mel
+                </h1>
+                <p className="text-sm sm:text-base text-amber-700 mt-1">
+                  Preview lessons for free, then unlock the full course to craft
+                  show-stopping looks.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-amber-50 text-amber-700">
+                <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
+                <div>
+                  <p className="text-xs">Average rating</p>
+                  <p className="font-semibold text-lg">
+                    {courses[0]?.rating ?? 4.9} / 5
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Lessons", value: "Bite-sized videos", icon: Video },
+                { label: "Skill level", value: "Beginner friendly", icon: GraduationCap },
+                { label: "Downloadables", value: "Look sheets", icon: BookOpen },
+                { label: "Access", value: "Watch on any device", icon: ShieldCheck },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl bg-amber-50 px-3 py-3 text-amber-700 flex items-start gap-2"
+                >
+                  <item.icon className="w-4 h-4 mt-0.5" />
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-amber-500">
+                      {item.label}
+                    </p>
+                    <p className="text-sm font-semibold">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-white to-amber-50 rounded-3xl p-5 shadow-xl border border-amber-50 space-y-4">
+            <div className="flex items-center gap-2 text-amber-700">
+              <Heart className="w-5 h-5 text-rose-400" />
+              <p className="font-semibold">Why Dress Up Box?</p>
+            </div>
+            <ul className="space-y-2 text-sm text-amber-700">
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 mt-1 text-amber-500" />
+                Hands-on looks with friendly walkthroughs.
+              </li>
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 mt-1 text-amber-500" />
+                Free previews so kids know exactly what they get.
+              </li>
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 mt-1 text-amber-500" />
+                Save favorites to cart and check out together.
+              </li>
+            </ul>
+            <Link
+              href="/dress/cart"
+              className="inline-flex items-center justify-center gap-2 w-full rounded-full bg-amber-500 text-white font-semibold px-4 py-3 shadow-lg hover:-translate-y-0.5 transition"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Go to cart
+            </Link>
+          </div>
+        </section>
+
+        {loading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="w-full bg-white/90 rounded-3xl shadow-md flex flex-col sm:flex-row gap-3 overflow-hidden border border-amber-50 p-4 animate-pulse"
+              >
+                <div className="w-full sm:w-48 h-36 bg-amber-100 rounded-2xl" />
+                <div className="flex-1 space-y-2 py-2">
+                  <div className="h-4 w-2/3 bg-amber-100 rounded-full" />
+                  <div className="h-3 w-full bg-amber-50 rounded-full" />
+                  <div className="h-3 w-5/6 bg-amber-50 rounded-full" />
+                  <div className="flex gap-2">
+                    <div className="h-6 w-20 bg-amber-50 rounded-full" />
+                    <div className="h-6 w-16 bg-amber-50 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-amber-200 bg-white/80 p-8 text-center text-amber-700 shadow">
+            <p className="font-semibold">No courses yet.</p>
+            <p className="text-sm text-amber-600">
+              Check back soon for new Dress Up Box adventures!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {courses.map((course) => (
+              <div
+                key={course.id}
+                className="w-full bg-white/95 rounded-3xl shadow-lg hover:shadow-xl transition flex flex-col sm:flex-row gap-3 overflow-hidden border border-amber-50"
+              >
+                <div className="relative w-full sm:w-48 h-40 shrink-0">
+                  <img
+                    src={course.thumbnailURL}
+                    alt={course.title}
+                    className="w-full h-full object-cover p-3 rounded-3xl"
+                  />
+                  <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs font-semibold">
+                    <Clock3 className="w-3 h-3" />
+                    {course.duration}
+                  </div>
+                  <button
+                    onClick={() => setSelected(course)}
+                    className="absolute inset-0 flex items-center justify-center text-white"
+                    aria-label={`Preview ${course.title}`}
+                  >
+                    <div className="bg-black/45 rounded-full p-2.5 hover:scale-105 transition">
+                      <PlayCircle className="w-6 h-6" />
+                    </div>
+                  </button>
+                </div>
+
+                <div className="flex-1 py-4 pr-4 pl-4 sm:pl-0 flex flex-col gap-3 justify-center">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-semibold text-amber-900">
+                        {course.title}
+                      </h2>
+                      <p className="text-sm text-amber-700 line-clamp-2">
+                        {course.description}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-amber-500 uppercase">
+                        Course Price
+                      </p>
+                      <p className="text-xl font-bold text-amber-700">
+                        {formatPrice(course.price)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-amber-700">
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {course.students ?? 0} students
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <BookOpen className="w-4 h-4" />
+                      {course.lessons ?? 0} lessons
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
+                      {(course.rating ?? 4.9).toFixed(1)}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        badges[course.level as keyof typeof badges] ||
+                        "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {course.level}
+                    </span>
+                  </div>
+
+                  {course.tags && course.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {course.tags.slice(0, 3).map((tag: string) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-1 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <button
+                      onClick={() => setSelected(course)}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-amber-200 text-amber-700 font-semibold hover:bg-amber-50 transition"
+                    >
+                      <PlayCircle className="w-4 h-4" />
+                      Preview
+                    </button>
+                    <button
+                      onClick={() => handleAddToCart(course)}
+                      disabled={isInCart(course.id)}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-amber-500 text-white font-semibold shadow hover:-translate-y-0.5 transition disabled:opacity-70 disabled:hover:translate-y-0"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      {isInCart(course.id) ? "In cart" : "Add to cart"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/70 transition"
+              aria-label="Close"
+              type="button"
+            >
+              ✕
+            </button>
+            {selected.previewURL ? (
+              <video
+                src={selected.previewURL}
+                controls
+                autoPlay
+                className="w-full h-[55vh] object-contain bg-black"
+              />
+            ) : (
+              <div className="w-full h-[55vh] flex items-center justify-center bg-amber-50">
+                <p className="text-amber-700">Preview not available</p>
+              </div>
+            )}
+            <div className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-amber-700">
+                <PlayCircle className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">
+                  {selected.previewHeadline || "Course preview"}
+                </h3>
+              </div>
+              <p className="text-sm text-amber-700">{selected.description}</p>
+              {selected.highlights && selected.highlights.length > 0 && (
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-amber-800">
+                  {selected.highlights.slice(0, 4).map((item: string) => (
+                    <li
+                      key={item}
+                      className="inline-flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2"
+                    >
+                      <ShieldCheck className="w-4 h-4 mt-0.5 text-amber-500" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-amber-600 text-white px-4 py-2 rounded-full shadow-lg z-40">
+          {toast}
+        </div>
+      )}
+    </main>
+  );
+}

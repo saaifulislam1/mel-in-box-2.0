@@ -17,6 +17,7 @@ import {
   AlertCircle,
   PartyPopper,
   Upload,
+  Shirt,
   X,
 } from "lucide-react";
 import { getAllPartyBookings } from "@/lib/partyService";
@@ -82,6 +83,19 @@ export default function AdminLayout({
         href: "/admin/gallery/upload",
         label: "Upload Photo",
         description: "Add to the gallery",
+        icon: <Upload className="w-4 h-4" />,
+      },
+      {
+        href: "/admin/dress",
+        label: "Dress Up Box",
+        description: "Manage fashion courses",
+        icon: <Shirt className="w-4 h-4" />,
+        match: "prefix",
+      },
+      {
+        href: "/admin/dress/upload",
+        label: "Add Course",
+        description: "Upload preview & price",
         icon: <Upload className="w-4 h-4" />,
       },
       {
