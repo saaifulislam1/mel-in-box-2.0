@@ -28,8 +28,22 @@ export type CourseData = {
   previewHeadline?: string;
   thumbnailURL: string;
   previewURL: string;
+  sections?: CourseSection[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt?: any;
+};
+
+export type CourseLesson = {
+  title: string;
+  duration?: string;
+  videoURL: string;
+  preview?: boolean;
+  downloadURL?: string;
+};
+
+export type CourseSection = {
+  title: string;
+  lessons: CourseLesson[];
 };
 
 const coursesCol = collection(db, "courses");
@@ -47,6 +61,7 @@ export async function createCourse(data: CourseData) {
     students: data.students ?? 0,
     lessons: data.lessons ?? 0,
     rating: data.rating ?? 5,
+    sections: data.sections ?? [],
     createdAt: serverTimestamp(),
   });
 }
@@ -63,4 +78,11 @@ export async function deleteCourse(id: string) {
 
 export async function updateCourse(id: string, data: Partial<CourseData>) {
   await updateDoc(courseDoc(id), data);
+}
+
+export async function getCourseById(id: string) {
+  const snapshot = await getDocs(query(coursesCol, orderBy("createdAt", "desc")));
+  const found = snapshot.docs.find((doc) => doc.id === id);
+  if (!found) return null;
+  return { id: found.id, ...found.data() } as CourseData & { id: string };
 }

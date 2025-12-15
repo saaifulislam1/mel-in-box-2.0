@@ -142,6 +142,17 @@ export default function AdminDressPage() {
                     {course.description}
                   </p>
                 )}
+                {course.sections && course.sections.length > 0 && (
+                  <div className="text-xs text-slate-300">
+                    {course.sections.length} sections /{" "}
+                    {course.sections.reduce(
+                      (count, section) =>
+                        count + (section.lessons ? section.lessons.length : 0),
+                      0
+                    )}{" "}
+                    lessons
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/10">
                     <BookOpen className="w-3 h-3 text-amber-300" />
