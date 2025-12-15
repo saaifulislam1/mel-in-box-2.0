@@ -15,7 +15,7 @@ const HeadingSection = (props: propsType) => {
   return (
     <div className="flex flex-wrap items-center justify-start md:justify-center  gap-3">
       <Link
-        href="/"
+        href={href ?? "/"}
         className={`inline-flex items-center align-middle  px-2 py-3 rounded-full ${textColor}   mr-17 md:mr-0`}
       >
         <SquareArrowLeft className="w-[40px] h-[40px]" />

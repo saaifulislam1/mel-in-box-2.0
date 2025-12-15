@@ -518,8 +518,16 @@ export default function DressPage() {
           >
             <button
               onClick={() => setSelected(null)}
-              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/70 transition"
-              aria-label="Close"
+              className="absolute top-3 left-3 p-2 rounded-full bg-white text-amber-700 shadow-lg hover:bg-amber-50 transition z-10"
+              aria-label="Close preview"
+              type="button"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-white text-amber-700 shadow-lg hover:bg-amber-50 transition z-10"
+              aria-label="Close preview"
               type="button"
             >
               ✕

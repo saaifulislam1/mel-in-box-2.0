@@ -2,18 +2,26 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   BookOpen,
   Clock3,
   Lock,
+  Pause,
+  Play,
   PlayCircle,
+  RotateCcw,
+  RotateCw,
+  Maximize2,
+  Minimize2,
   ShieldCheck,
   ShoppingBag,
   Star,
+  Timer,
   Users,
   Video,
+  X,
 } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
 import { CourseSection, getCourseById } from "@/lib/courseService";
@@ -53,6 +61,11 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeLessonUrl, setActiveLessonUrl] = useState("");
   const [activeLessonTitle, setActiveLessonTitle] = useState("");
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -89,6 +102,94 @@ export default function CourseDetailPage() {
     load();
   }, [courseId, router]);
 
+  const togglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const skip = useCallback((seconds: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seconds));
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const fsElement =
+      document.fullscreenElement ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (document as any).webkitFullscreenElement ||
+      null;
+    if (!fsElement) {
+      const request =
+        container.requestFullscreen ||
+        // @ts-expect-error webkit
+        container.webkitRequestFullscreen ||
+        undefined;
+      if (request) request.call(container);
+    } else {
+      const exit =
+        document.exitFullscreen ||
+        // @ts-expect-error webkit
+        document.webkitExitFullscreen ||
+        undefined;
+      if (exit) exit.call(document);
+    }
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = playbackRate;
+  }, [playbackRate, activeLessonUrl]);
+
+  useEffect(() => {
+    const handler = () => {
+      const fsElement =
+        document.fullscreenElement ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (document as any).webkitFullscreenElement ||
+        null;
+      setIsFullscreen(Boolean(fsElement));
+    };
+    document.addEventListener("fullscreenchange", handler);
+    // @ts-expect-error webkit fullscreen for Safari
+    document.addEventListener("webkitfullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      // @ts-expect-error webkit fullscreen for Safari
+      document.removeEventListener("webkitfullscreenchange", handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!containerRef.current?.contains(document.activeElement)) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      }
+      if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        skip(-10);
+      }
+      if (e.code === "ArrowRight") {
+        e.preventDefault();
+        skip(10);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [skip, togglePlay]);
+
   const owned = course ? isOwned(course.id) : false;
 
   const badges = useMemo(
@@ -120,25 +221,105 @@ export default function CourseDetailPage() {
     <main className="relative min-h-screen bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 text-amber-900 px-4 pb-16 pt-24 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-6xl mx-auto space-y-6">
-        <HeadingSection
-          href="/dress"
-          title={course.title}
-          textColor="text-amber-700"
-          icon={ShoppingBag}
-        />
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-amber-800 font-semibold shadow hover:-translate-y-0.5 transition border border-amber-100"
+            type="button"
+          >
+            ← Back
+          </button>
+          <HeadingSection
+            href="/dress"
+            title={course.title}
+            textColor="text-amber-700"
+            icon={ShoppingBag}
+          />
+          <button
+            onClick={() => router.push("/dress")}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-amber-800 font-semibold shadow hover:-translate-y-0.5 transition border border-amber-100"
+            type="button"
+            aria-label="Close and return to Dress Up Box"
+          >
+            <X className="w-4 h-4" />
+            Close
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.9fr] gap-4 lg:gap-6">
-          <div className="bg-white/95 rounded-3xl p-4 sm:p-6 shadow-xl border border-amber-50 space-y-4">
+          <div className="bg-black rounded-3xl p-4 sm:p-6 shadow-xl border border-black/40 space-y-4 text-amber-50">
             {activeLessonUrl || course.previewURL ? (
-              <div className="relative w-full overflow-hidden rounded-2xl bg-black">
-                <video
-                  key={activeLessonUrl || course.previewURL}
-                  src={activeLessonUrl || course.previewURL}
-                  controls
-                  autoPlay
-                  controlsList="nodownload"
-                  className="w-full max-h-[60vh] min-h-[240px] object-contain bg-black"
-                />
+              <div
+                ref={containerRef}
+                className="relative w-full overflow-hidden rounded-2xl bg-black p-1 shadow-lg flex justify-center"
+              >
+                <div className="relative rounded-xl overflow-hidden bg-black flex items-center justify-center w-full max-w-5xl">
+                  <video
+                    key={activeLessonUrl || course.previewURL}
+                    ref={videoRef}
+                    src={activeLessonUrl || course.previewURL}
+                    controls={false}
+                    autoPlay
+                    controlsList="nodownload"
+                    playsInline
+                    className="w-full h-full max-h-[70vh] min-h-[240px] object-contain bg-black mx-auto"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex flex-wrap items-center gap-2 text-sm text-white">
+                    <button
+                      onClick={togglePlay}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label={isPlaying ? "Pause video" : "Play video"}
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-4 h-4" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => skip(-10)}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label="Rewind 10 seconds"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => skip(10)}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label="Forward 10 seconds"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </button>
+                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition">
+                      <Timer className="w-4 h-4" />
+                      <select
+                        value={playbackRate}
+                        onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                        className="bg-transparent border-0 text-white focus:outline-none"
+                      >
+                        {[0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                          <option key={rate} value={rate} className="text-amber-900">
+                            {rate}x
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      onClick={toggleFullscreen}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    >
+                      {isFullscreen ? (
+                        <Minimize2 className="w-4 h-4" />
+                      ) : (
+                        <Maximize2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="w-full h-[55vh] flex items-center justify-center bg-amber-50 rounded-2xl">
