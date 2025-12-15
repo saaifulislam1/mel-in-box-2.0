@@ -178,6 +178,12 @@ export default function AdminDressPage() {
                       {formatPrice(course.price)}
                     </p>
                   </div>
+                  <Link
+                    href={`/admin/dress/${course.id}/edit`}
+                    className="text-xs text-amber-300 hover:text-amber-200 underline"
+                  >
+                    Edit
+                  </Link>
                   <div className="inline-flex items-center gap-1 text-xs text-slate-300">
                     <Clock3 className="w-4 h-4 text-amber-300" />
                     Updated

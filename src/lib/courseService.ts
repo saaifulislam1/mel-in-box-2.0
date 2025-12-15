@@ -7,6 +7,7 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  getDoc,
   orderBy,
   query,
   serverTimestamp,
@@ -81,8 +82,7 @@ export async function updateCourse(id: string, data: Partial<CourseData>) {
 }
 
 export async function getCourseById(id: string) {
-  const snapshot = await getDocs(query(coursesCol, orderBy("createdAt", "desc")));
-  const found = snapshot.docs.find((doc) => doc.id === id);
-  if (!found) return null;
-  return { id: found.id, ...found.data() } as CourseData & { id: string };
+  const snapshot = await getDoc(courseDoc(id));
+  if (!snapshot.exists()) return null;
+  return { id: snapshot.id, ...snapshot.data() } as CourseData & { id: string };
 }

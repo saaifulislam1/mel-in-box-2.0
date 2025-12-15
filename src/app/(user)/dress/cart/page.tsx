@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
 import { useDressCart } from "@/hooks/useDressCart";
+import { useDressAccess } from "@/hooks/useDressAccess";
 import Link from "next/link";
 
 const formatPrice = (price?: number) =>
@@ -22,11 +23,15 @@ const formatPrice = (price?: number) =>
 
 export default function DressCartPage() {
   const { items, removeItem, clearCart, total } = useDressCart();
+  const { addPurchased } = useDressAccess();
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   const handleCheckout = () => {
     setMessage("Purchase completed! A confirmation email is on the way.");
+    if (items.length) {
+      addPurchased(items);
+    }
     clearCart();
   };
 
