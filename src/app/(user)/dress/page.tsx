@@ -2,19 +2,26 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Clock3,
   GraduationCap,
   Heart,
   Lock,
+  Pause,
+  Play,
   PlayCircle,
+  RotateCcw,
+  RotateCw,
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
   Star,
+  Timer,
+  Maximize2,
+  Minimize2,
   Users,
   Video,
 } from "lucide-react";
@@ -47,6 +54,11 @@ export default function DressPage() {
   const [toast, setToast] = useState<string | null>(null);
   const { items, addItem, isInCart } = useDressCart();
   const { isOwned } = useDressAccess();
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const badges = useMemo(
     () => ({
@@ -144,10 +156,78 @@ export default function DressPage() {
     setActiveLessonTitle(firstPreviewLesson?.title || selected.previewHeadline || selected.title);
   }, [selected]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = playbackRate;
+  }, [playbackRate, activeLessonUrl]);
+
+  useEffect(() => {
+    const handler = () => {
+      const fsElement =
+        document.fullscreenElement ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (document as any).webkitFullscreenElement ||
+        null;
+      setIsFullscreen(Boolean(fsElement));
+    };
+    document.addEventListener("fullscreenchange", handler);
+    // @ts-expect-error webkit fullscreen for Safari
+    document.addEventListener("webkitfullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      // @ts-expect-error webkit fullscreen for Safari
+      document.removeEventListener("webkitfullscreenchange", handler);
+    };
+  }, []);
+
   const handleAddToCart = (course: Course) => {
     addItem(course);
     setToast(`${course.title} added to cart`);
   };
+
+  const togglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const skip = useCallback((seconds: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seconds));
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const fsElement =
+      document.fullscreenElement ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (document as any).webkitFullscreenElement ||
+      null;
+    if (!fsElement) {
+      const request =
+        container.requestFullscreen ||
+        // @ts-expect-error webkit
+        container.webkitRequestFullscreen ||
+        undefined;
+      if (request) request.call(container);
+    } else {
+      const exit =
+        document.exitFullscreen ||
+        // @ts-expect-error webkit
+        document.webkitExitFullscreen ||
+        undefined;
+      if (exit) exit.call(document);
+    }
+  }, []);
 
   return (
     <main className="relative min-h-screen bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 text-amber-900 px-4 pb-16 pt-24 overflow-hidden">
@@ -445,13 +525,75 @@ export default function DressPage() {
               ✕
             </button>
             {activeLessonUrl || selected.previewURL ? (
-              <video
-                src={activeLessonUrl || selected.previewURL}
-                controls
-                autoPlay
-                controlsList="nodownload"
-                className="w-full max-h-[60vh] min-h-[240px] object-contain bg-black"
-              />
+              <div
+                ref={containerRef}
+                className="relative w-full overflow-hidden rounded-b-2xl bg-gradient-to-br from-amber-200 via-orange-200 to-amber-100 p-1"
+              >
+                <div className="relative rounded-xl overflow-hidden bg-black">
+                  <video
+                    key={activeLessonUrl || selected.previewURL}
+                    ref={videoRef}
+                    src={activeLessonUrl || selected.previewURL}
+                    controls={false}
+                    autoPlay
+                    controlsList="nodownload"
+                    playsInline
+                    className="w-full max-h-[60vh] min-h-[240px] object-contain bg-black"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex flex-wrap items-center gap-2 text-sm text-white">
+                    <button
+                      onClick={togglePlay}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label={isPlaying ? "Pause video" : "Play video"}
+                    >
+                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => skip(-10)}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label="Rewind 10 seconds"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => skip(10)}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label="Forward 10 seconds"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </button>
+                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition">
+                      <Timer className="w-4 h-4" />
+                      <select
+                        value={playbackRate}
+                        onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                        className="bg-transparent border-0 text-white focus:outline-none"
+                        aria-label="Playback speed"
+                      >
+                        {[0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                          <option key={rate} value={rate} className="text-amber-900">
+                            {rate}x
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      onClick={toggleFullscreen}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    >
+                      {isFullscreen ? (
+                        <Minimize2 className="w-4 h-4" />
+                      ) : (
+                        <Maximize2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="w-full h-[55vh] flex items-center justify-center bg-amber-50">
                 <p className="text-amber-700">Preview not available</p>

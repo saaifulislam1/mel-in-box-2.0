@@ -2,53 +2,14 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BookOpen, Clock3, PlayCircle, ShoppingBag, Star, Users } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
 import { useDressAccess } from "@/hooks/useDressAccess";
-import { CourseSection } from "@/lib/courseService";
 import Link from "next/link";
-
-type OwnedCourse = {
-  id: string;
-  title: string;
-  description?: string;
-  price?: number;
-  duration?: string;
-  level?: string;
-  lessons?: number;
-  students?: number;
-  rating?: number;
-  tags?: string[];
-  highlights?: string[];
-  previewHeadline?: string;
-  thumbnailURL?: string;
-  previewURL?: string;
-  sections?: CourseSection[];
-};
-
-const formatPrice = (price?: number) =>
-  typeof price === "number" ? `$${price.toFixed(2)}` : "$0.00";
 
 export default function DressLibraryPage() {
   const { owned } = useDressAccess();
-  const [selected, setSelected] = useState<OwnedCourse | null>(null);
-  const [activeLessonUrl, setActiveLessonUrl] = useState<string>("");
-  const [activeLessonTitle, setActiveLessonTitle] = useState<string>("");
-
-  useEffect(() => {
-    if (!selected) return;
-    const firstLesson =
-      selected.sections?.flatMap((s) => s.lessons || []).find((l) => l.videoURL) ||
-      null;
-    const timer = window.setTimeout(() => {
-      setActiveLessonUrl(firstLesson?.videoURL || selected.previewURL || "");
-      setActiveLessonTitle(
-        firstLesson?.title || selected.previewHeadline || selected.title
-      );
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [selected]);
 
   const badges = useMemo(
     () => ({
@@ -64,12 +25,21 @@ export default function DressLibraryPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_30%)] pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto space-y-6">
-        <HeadingSection
-          href="/dress"
-          title="My Dress Up Box Library"
-          textColor="text-amber-700"
-          icon={ShoppingBag}
-        />
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          {/* <Link
+            href="/dress"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-amber-800 font-semibold shadow hover:-translate-y-0.5 transition border border-amber-100"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link> */}
+          <HeadingSection
+            href="/dress"
+            title="My Dress Up Box Library"
+            textColor="text-amber-700"
+            icon={ShoppingBag}
+          />
+        </div>
 
         {owned.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-amber-200 bg-white/80 p-8 text-center text-amber-700 shadow">
@@ -153,7 +123,6 @@ export default function DressLibraryPage() {
           </div>
         )}
       </div>
-
     </main>
   );
 }
