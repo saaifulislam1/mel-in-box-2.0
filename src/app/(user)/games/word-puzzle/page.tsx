@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
 import useUserGuard from "@/hooks/useUserGuard";
 import { useGameProgress } from "@/hooks/useGameProgress";
@@ -158,7 +158,7 @@ const difficultyPill: Record<Difficulty, string> = {
   Hard: "bg-rose-100 text-rose-700",
 };
 
-const scrambleWord = (word: string) => {
+const scrambleWord = (word: string): string => {
   if (word.length < 2 || new Set(word).size === 1) return word;
   const letters = word.split("");
   for (let i = letters.length - 1; i > 0; i -= 1) {
@@ -185,14 +185,10 @@ export default function WordPuzzlePage() {
     []
   );
 
-  useEffect(() => {
-    if (!activeLevel) return;
-    setScrambled(scrambleWord(activeLevel.word));
-  }, [activeLevel]);
-
   const handleStart = (level: Level) => {
     setActiveLevel(level);
     setInput("");
+    setScrambled(scrambleWord(level.word));
     setFeedback(null);
   };
 

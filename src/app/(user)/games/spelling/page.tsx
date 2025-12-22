@@ -230,7 +230,6 @@ export default function SpellingGamePage() {
 
   useEffect(() => {
     if (!activeLevel) return;
-    setSecondsLeft(activeLevel.timeLimit);
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev === null) return prev;
@@ -249,6 +248,7 @@ export default function SpellingGamePage() {
   const handleStart = (level: Level) => {
     setFeedback(null);
     setInput("");
+    setSecondsLeft(level.timeLimit);
     setActiveLevel(level);
   };
 
