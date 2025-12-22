@@ -138,13 +138,28 @@ export default function AdminBookingsPage() {
   const cancelWithRefund = async (id: string) => {
     setActionId(id);
     try {
+      const booking = bookings.find((item) => item.id === id);
       const res = await fetch("/api/bookings/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: id }),
+        body: JSON.stringify({
+          bookingId: id,
+          stripeSessionId: booking?.stripeSessionId,
+          paymentIntentId: booking?.paymentIntentId,
+        }),
       });
-      if (!res.ok) throw new Error("Cancel failed");
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Cancel failed");
+      }
+      await updatePartyBooking(id, {
+        status: "canceled",
+        refundId: data.refundId,
+        refundAmount: data.refundAmount,
+        refundStatus: data.refundStatus,
+        refundedAt: data.refundId ? new Date().toISOString() : undefined,
+        paymentIntentId: data.paymentIntentId ?? booking?.paymentIntentId,
+      });
       setBookings((prev) =>
         prev.map((b) =>
           b.id === id
@@ -154,6 +169,7 @@ export default function AdminBookingsPage() {
                 refundId: data.refundId,
                 refundAmount: data.refundAmount,
                 refundStatus: data.refundStatus,
+                paymentIntentId: data.paymentIntentId ?? b.paymentIntentId,
               }
             : b
         )

@@ -29,6 +29,7 @@ export type PartyPackage = {
 };
 
 export type PartyBooking = {
+  userId?: string;
   packageId: string;
   packageName: string;
   packagePrice: number;
