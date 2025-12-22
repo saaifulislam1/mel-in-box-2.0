@@ -276,20 +276,20 @@ export default function EditCoursePage() {
 
   return (
     <main className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-2 text-slate-200">
+      <div className="flex flex-wrap items-center gap-3 text-slate-200">
         <ShoppingBag className="w-5 h-5 text-amber-300" />
         <h1 className="text-xl font-semibold">Edit Course</h1>
         <button
           type="button"
           onClick={() => router.push("/admin/dress")}
-          className="ml-auto inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"
+          className="sm:ml-auto inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur shadow-2xl p-6 space-y-4">
+      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur shadow-2xl p-4 sm:p-6 space-y-4">
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -415,7 +415,9 @@ export default function EditCoursePage() {
               <p className="text-sm text-slate-200">Thumbnail</p>
               <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-4 space-y-2">
                 {thumbnailURL && (
-                  <p className="text-xs text-slate-300">Current: {thumbnailURL}</p>
+                  <p className="text-xs text-slate-300 break-all">
+                    Current: {thumbnailURL}
+                  </p>
                 )}
                 <input
                   type="file"
@@ -435,7 +437,9 @@ export default function EditCoursePage() {
               </p>
               <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-4 space-y-2">
                 {previewURL && (
-                  <p className="text-xs text-slate-300">Current: {previewURL}</p>
+                  <p className="text-xs text-slate-300 break-all">
+                    Current: {previewURL}
+                  </p>
                 )}
                 <input
                   type="file"
@@ -451,7 +455,7 @@ export default function EditCoursePage() {
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <label className="text-sm text-slate-200">Sections & lessons</label>
               <button
                 type="button"
@@ -469,7 +473,7 @@ export default function EditCoursePage() {
                   key={section.id}
                   className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                  <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3">
                     <input
                       value={section.title}
                       onChange={(e) => updateSectionTitle(section.id, e.target.value)}
@@ -497,7 +501,7 @@ export default function EditCoursePage() {
                           key={lesson.id}
                           className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2"
                         >
-                          <div className="flex flex-col md:flex-row md:items-center gap-3">
+                          <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3">
                             <input
                               value={lesson.title}
                               onChange={(e) =>
@@ -511,7 +515,7 @@ export default function EditCoursePage() {
                               onChange={(e) =>
                                 updateLesson(section.id, lesson.id, { duration: e.target.value })
                               }
-                              className="w-32 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+                              className="w-full md:w-32 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
                               placeholder="05:00"
                             />
                             <label className="inline-flex items-center gap-2 text-xs text-slate-200">
@@ -551,7 +555,7 @@ export default function EditCoursePage() {
                               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                             />
                             {lesson.videoURL && (
-                              <p className="text-[11px] text-slate-300">
+                              <p className="text-[11px] text-slate-300 break-all">
                                 Current: {lesson.videoURL}
                               </p>
                             )}
