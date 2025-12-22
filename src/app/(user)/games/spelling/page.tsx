@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
 import useUserGuard from "@/hooks/useUserGuard";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import CelebrationOverlay from "@/components/CelebrationOverlay";
+import { useCelebration } from "@/hooks/useCelebration";
 import { BookOpen, PartyPopper, Play, Timer } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
@@ -214,6 +216,7 @@ export default function SpellingGamePage() {
   useUserGuard();
   const { progress, loading, saving, saveLevel, unlocked } =
     useGameProgress(GAME_ID);
+  const { isCelebrating, message, celebrate } = useCelebration();
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [input, setInput] = useState("");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -255,11 +258,12 @@ export default function SpellingGamePage() {
       input.trim().toLowerCase() === activeLevel.word.toLowerCase();
     if (!correct) {
       setFeedback("Oops, check your spelling and try again!");
-      setActiveLevel(null);
+      setInput("");
       return;
     }
     const updated = await saveLevel(activeLevel.id, activeLevel.points);
     if (updated) {
+      celebrate(`Great job! +${activeLevel.points} points`);
       setFeedback(`Great job! You earned ${activeLevel.points} points.`);
     } else {
       setFeedback("Could not save your score. Try again.");
@@ -297,7 +301,7 @@ export default function SpellingGamePage() {
             <div className="text-right text-xs text-slate-500">
               <p>Levels done</p>
               <p className="font-semibold text-slate-800">
-                {(progress?.completedLevels?.length ?? 0)}/18
+                {progress?.completedLevels?.length ?? 0}/18
               </p>
             </div>
           </div>
@@ -332,7 +336,7 @@ export default function SpellingGamePage() {
                             Level {lvl.id}
                           </p>
                           <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                            {lvl.word}
+                            {lvl.clue}
                             <span
                               className={`px-2 py-1 rounded-full text-[11px] ${
                                 difficultyPill[lvl.difficulty]
@@ -441,9 +445,15 @@ export default function SpellingGamePage() {
                 {saving ? <Spinner label="Saving..." /> : "Submit"}
               </button>
             </div>
+            {feedback && (
+              <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-indigo-700">
+                {feedback}
+              </div>
+            )}
           </div>
         </div>
       )}
+      <CelebrationOverlay isOpen={isCelebrating} message={message} />
     </main>
   );
 }

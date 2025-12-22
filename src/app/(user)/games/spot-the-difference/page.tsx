@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
 import useUserGuard from "@/hooks/useUserGuard";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import CelebrationOverlay from "@/components/CelebrationOverlay";
+import { useCelebration } from "@/hooks/useCelebration";
 import { CheckCircle2, Eye, Play, RefreshCcw } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
@@ -447,6 +449,7 @@ export default function SpotTheDifferencePage() {
   useUserGuard();
   const { progress, loading, saving, saveLevel, unlocked } =
     useGameProgress(GAME_ID);
+  const { isCelebrating, message, celebrate } = useCelebration();
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [found, setFound] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -480,6 +483,7 @@ export default function SpotTheDifferencePage() {
     if (!activeLevel || !allFound) return;
     const updated = await saveLevel(activeLevel.id, activeLevel.points);
     if (updated) {
+      celebrate(`Great job! +${activeLevel.points} points`);
       setFeedback(`Great job! You earned ${activeLevel.points} points.`);
     } else {
       setFeedback("Could not save your score. Try again.");
@@ -723,6 +727,7 @@ export default function SpotTheDifferencePage() {
           </div>
         )}
       </div>
+      <CelebrationOverlay isOpen={isCelebrating} message={message} />
     </main>
   );
 }

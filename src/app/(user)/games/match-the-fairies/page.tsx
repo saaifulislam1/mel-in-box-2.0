@@ -2,10 +2,12 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
 import useUserGuard from "@/hooks/useUserGuard";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import CelebrationOverlay from "@/components/CelebrationOverlay";
+import { useCelebration } from "@/hooks/useCelebration";
 import { CheckCircle2, Play, RefreshCcw, Sparkles } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
@@ -124,49 +126,11 @@ const buildDeck = (levelId: number, pairCount: number) => {
   return shuffle(cards);
 };
 
-const FairyAvatar = ({
-  fairy,
-  size = "lg",
-  showWings = true,
-}: {
-  fairy: Fairy;
-  size?: "sm" | "lg";
-  showWings?: boolean;
-}) => {
-  const base = size === "lg" ? "h-16 w-16" : "h-10 w-10";
-  const wing = size === "lg" ? "h-8 w-5" : "h-6 w-4";
-  const core = size === "lg" ? "h-9 w-9 text-xs" : "h-7 w-7 text-[10px]";
-  return (
-    <div className={`relative ${base}`}>
-      {showWings && (
-        <>
-          <div
-            className={`absolute -left-2 top-3 ${wing} rounded-full bg-white/70 shadow-sm`}
-          />
-          <div
-            className={`absolute -right-2 top-3 ${wing} rounded-full bg-white/70 shadow-sm`}
-          />
-        </>
-      )}
-      <div
-        className={`relative ${base} rounded-2xl bg-gradient-to-br ${fairy.gradient} shadow-inner flex items-center justify-center`}
-      >
-        <div
-          className={`rounded-full ${core} bg-white/85 text-slate-700 font-semibold flex items-center justify-center`}
-        >
-          {fairy.symbol}
-        </div>
-        <span className="absolute -top-1 right-2 h-2 w-2 rounded-full bg-white/80" />
-        <span className="absolute bottom-2 left-2 h-1.5 w-1.5 rounded-full bg-white/70" />
-      </div>
-    </div>
-  );
-};
-
 export default function MatchTheFairiesPage() {
   useUserGuard();
   const { progress, loading, saving, saveLevel, unlocked } =
     useGameProgress(GAME_ID);
+  const { isCelebrating, message, celebrate } = useCelebration();
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [deck, setDeck] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState<string[]>([]);
@@ -232,33 +196,34 @@ export default function MatchTheFairiesPage() {
       const next = [...prev, cardId];
       if (next.length === 2) {
         setMoves((current) => current + 1);
+        setChecking(true);
+        const [firstId, secondId] = next;
+        const first = deckById.get(firstId);
+        const second = deckById.get(secondId);
+        setTimeout(() => {
+          if (first && second && first.fairyId === second.fairyId) {
+            setMatched((current) =>
+              current.includes(first.fairyId)
+                ? current
+                : [...current, first.fairyId]
+            );
+            setFeedback(null);
+          } else {
+            setFeedback("Not a match yet — try again!");
+          }
+          setFlipped([]);
+          setChecking(false);
+        }, 650);
       }
       return next;
     });
   };
 
-  useEffect(() => {
-    if (flipped.length !== 2) return;
-    setChecking(true);
-    const [firstId, secondId] = flipped;
-    const first = deckById.get(firstId);
-    const second = deckById.get(secondId);
-    const timer = setTimeout(() => {
-      if (first && second && first.fairyId === second.fairyId) {
-        setMatched((prev) =>
-          prev.includes(first.fairyId) ? prev : [...prev, first.fairyId]
-        );
-      }
-      setFlipped([]);
-      setChecking(false);
-    }, 650);
-    return () => clearTimeout(timer);
-  }, [deckById, flipped]);
-
   const handleFinish = async () => {
     if (!activeLevel || !allMatched) return;
     const updated = await saveLevel(activeLevel.id, activeLevel.points);
     if (updated) {
+      celebrate(`Sweet match! +${activeLevel.points} points`);
       setFeedback(`Sweet match! You earned ${activeLevel.points} points.`);
     } else {
       setFeedback("Could not save your score. Try again.");
@@ -542,6 +507,7 @@ export default function MatchTheFairiesPage() {
           </div>
         )}
       </div>
+      <CelebrationOverlay isOpen={isCelebrating} message={message} />
     </main>
   );
 }

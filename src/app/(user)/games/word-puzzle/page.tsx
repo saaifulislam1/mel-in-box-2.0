@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
 import useUserGuard from "@/hooks/useUserGuard";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import CelebrationOverlay from "@/components/CelebrationOverlay";
+import { useCelebration } from "@/hooks/useCelebration";
 import { BookOpen, Play, Shuffle, Sparkles } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
@@ -22,24 +24,132 @@ type Level = {
 };
 
 const levels: Level[] = [
-  { id: 1, word: "cat", clue: "A furry friend who purrs", difficulty: "Easy", points: 50 },
-  { id: 2, word: "sun", clue: "It warms the daytime sky", difficulty: "Easy", points: 60 },
-  { id: 3, word: "tree", clue: "Tall plant with leaves", difficulty: "Easy", points: 70 },
-  { id: 4, word: "cake", clue: "Sweet treat with frosting", difficulty: "Easy", points: 80 },
-  { id: 5, word: "ball", clue: "You can bounce it", difficulty: "Easy", points: 90 },
-  { id: 6, word: "fish", clue: "It swims in water", difficulty: "Easy", points: 100 },
-  { id: 7, word: "rocket", clue: "It blasts off to space", difficulty: "Medium", points: 110 },
-  { id: 8, word: "rainbow", clue: "Colors after the rain", difficulty: "Medium", points: 120 },
-  { id: 9, word: "cupcake", clue: "Tiny cake in a wrapper", difficulty: "Medium", points: 130 },
-  { id: 10, word: "jungle", clue: "A wild, leafy forest", difficulty: "Medium", points: 140 },
-  { id: 11, word: "dolphin", clue: "A friendly ocean jumper", difficulty: "Medium", points: 150 },
-  { id: 12, word: "picnic", clue: "Outdoor meal with snacks", difficulty: "Medium", points: 160 },
-  { id: 13, word: "butterfly", clue: "Colorful winged insect", difficulty: "Hard", points: 175 },
-  { id: 14, word: "playground", clue: "Swings and slides live here", difficulty: "Hard", points: 185 },
-  { id: 15, word: "waterfall", clue: "A big falling stream", difficulty: "Hard", points: 195 },
-  { id: 16, word: "telescope", clue: "Tool to see far stars", difficulty: "Hard", points: 210 },
-  { id: 17, word: "adventure", clue: "An exciting journey", difficulty: "Hard", points: 220 },
-  { id: 18, word: "storybook", clue: "A book full of tales", difficulty: "Hard", points: 230 },
+  {
+    id: 1,
+    word: "cat",
+    clue: "A furry friend who purrs",
+    difficulty: "Easy",
+    points: 50,
+  },
+  {
+    id: 2,
+    word: "sun",
+    clue: "It warms the daytime sky",
+    difficulty: "Easy",
+    points: 60,
+  },
+  {
+    id: 3,
+    word: "tree",
+    clue: "Tall plant with leaves",
+    difficulty: "Easy",
+    points: 70,
+  },
+  {
+    id: 4,
+    word: "cake",
+    clue: "Sweet treat with frosting",
+    difficulty: "Easy",
+    points: 80,
+  },
+  {
+    id: 5,
+    word: "ball",
+    clue: "You can bounce it",
+    difficulty: "Easy",
+    points: 90,
+  },
+  {
+    id: 6,
+    word: "fish",
+    clue: "It swims in water",
+    difficulty: "Easy",
+    points: 100,
+  },
+  {
+    id: 7,
+    word: "rocket",
+    clue: "It blasts off to space",
+    difficulty: "Medium",
+    points: 110,
+  },
+  {
+    id: 8,
+    word: "rainbow",
+    clue: "Colors after the rain",
+    difficulty: "Medium",
+    points: 120,
+  },
+  {
+    id: 9,
+    word: "cupcake",
+    clue: "Tiny cake in a wrapper",
+    difficulty: "Medium",
+    points: 130,
+  },
+  {
+    id: 10,
+    word: "jungle",
+    clue: "A wild, leafy forest",
+    difficulty: "Medium",
+    points: 140,
+  },
+  {
+    id: 11,
+    word: "dolphin",
+    clue: "A friendly ocean jumper",
+    difficulty: "Medium",
+    points: 150,
+  },
+  {
+    id: 12,
+    word: "picnic",
+    clue: "Outdoor meal with snacks",
+    difficulty: "Medium",
+    points: 160,
+  },
+  {
+    id: 13,
+    word: "butterfly",
+    clue: "Colorful winged insect",
+    difficulty: "Hard",
+    points: 175,
+  },
+  {
+    id: 14,
+    word: "playground",
+    clue: "Swings and slides live here",
+    difficulty: "Hard",
+    points: 185,
+  },
+  {
+    id: 15,
+    word: "waterfall",
+    clue: "A big falling stream",
+    difficulty: "Hard",
+    points: 195,
+  },
+  {
+    id: 16,
+    word: "telescope",
+    clue: "Tool to see far stars",
+    difficulty: "Hard",
+    points: 210,
+  },
+  {
+    id: 17,
+    word: "adventure",
+    clue: "An exciting journey",
+    difficulty: "Hard",
+    points: 220,
+  },
+  {
+    id: 18,
+    word: "storybook",
+    clue: "A book full of tales",
+    difficulty: "Hard",
+    points: 230,
+  },
 ];
 
 const difficultyPill: Record<Difficulty, string> = {
@@ -63,6 +173,7 @@ export default function WordPuzzlePage() {
   useUserGuard();
   const { progress, loading, saving, saveLevel, unlocked } =
     useGameProgress(GAME_ID);
+  const { isCelebrating, message, celebrate } = useCelebration();
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [input, setInput] = useState("");
   const [scrambled, setScrambled] = useState("");
@@ -96,11 +207,12 @@ export default function WordPuzzlePage() {
       input.trim().toLowerCase() === activeLevel.word.toLowerCase();
     if (!correct) {
       setFeedback("Oops! Try again and use the clue.");
-      setActiveLevel(null);
+      setInput("");
       return;
     }
     const updated = await saveLevel(activeLevel.id, activeLevel.points);
     if (updated) {
+      celebrate(`Great job! +${activeLevel.points} points`);
       setFeedback(`Great job! You earned ${activeLevel.points} points.`);
     } else {
       setFeedback("Could not save your score. Try again.");
@@ -127,7 +239,9 @@ export default function WordPuzzlePage() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <div className="rounded-2xl bg-white shadow border border-indigo-100 px-4 py-3 text-sm text-slate-700 flex items-center justify-between min-w-[220px]">
             <div>
-              <p className="text-xs text-indigo-500 font-semibold">Total points</p>
+              <p className="text-xs text-indigo-500 font-semibold">
+                Total points
+              </p>
               <p className="text-xl font-bold text-indigo-700">
                 {progress?.totalPoints ?? 0}
               </p>
@@ -135,7 +249,7 @@ export default function WordPuzzlePage() {
             <div className="text-right text-xs text-slate-500">
               <p>Levels done</p>
               <p className="font-semibold text-slate-800">
-                {(progress?.completedLevels?.length ?? 0)}/18
+                {progress?.completedLevels?.length ?? 0}/18
               </p>
             </div>
           </div>
@@ -163,7 +277,7 @@ export default function WordPuzzlePage() {
                         Level {lvl.id}
                       </p>
                       <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                        {lvl.word}
+                        {lvl.clue}
                         <span
                           className={`px-2 py-1 rounded-full text-[11px] ${
                             difficultyPill[lvl.difficulty]
@@ -278,9 +392,15 @@ export default function WordPuzzlePage() {
                 {saving ? <Spinner label="Saving..." /> : "Submit"}
               </button>
             </div>
+            {feedback && (
+              <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-indigo-700">
+                {feedback}
+              </div>
+            )}
           </div>
         </div>
       )}
+      <CelebrationOverlay isOpen={isCelebrating} message={message} />
     </main>
   );
 }
