@@ -45,6 +45,13 @@ const CACHE_KEY = "dress-courses-cache";
 const formatPrice = (price?: number) =>
   typeof price === "number" ? `$${price.toFixed(2)}` : "$0.00";
 
+const formatTime = (time: number) => {
+  if (!Number.isFinite(time) || time <= 0) return "0:00";
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
+
 export default function DressPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selected, setSelected] = useState<Course | null>(null);
@@ -57,6 +64,8 @@ export default function DressPage() {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -154,6 +163,8 @@ export default function DressPage() {
 
     setActiveLessonUrl(firstPreviewLesson?.videoURL || selected.previewURL || "");
     setActiveLessonTitle(firstPreviewLesson?.title || selected.previewHeadline || selected.title);
+    setCurrentTime(0);
+    setDuration(0);
   }, [selected]);
 
   useEffect(() => {
@@ -227,6 +238,13 @@ export default function DressPage() {
         undefined;
       if (exit) exit.call(document);
     }
+  }, []);
+
+  const handleSeek = useCallback((value: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = value;
+    setCurrentTime(value);
   }, []);
 
   return (
@@ -549,56 +567,89 @@ export default function DressPage() {
                     className="w-full max-h-[60vh] min-h-[240px] object-contain bg-black"
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
+                    onLoadedMetadata={(event) => {
+                      setDuration(event.currentTarget.duration || 0);
+                      setCurrentTime(event.currentTarget.currentTime || 0);
+                    }}
+                    onTimeUpdate={(event) => {
+                      setCurrentTime(event.currentTarget.currentTime || 0);
+                    }}
+                    onEnded={() => setIsPlaying(false)}
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex flex-wrap items-center gap-2 text-sm text-white">
-                    <button
-                      onClick={togglePlay}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
-                      aria-label={isPlaying ? "Pause video" : "Play video"}
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={() => skip(-10)}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
-                      aria-label="Rewind 10 seconds"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => skip(10)}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
-                      aria-label="Forward 10 seconds"
-                    >
-                      <RotateCw className="w-4 h-4" />
-                    </button>
-                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition">
-                      <Timer className="w-4 h-4" />
-                      <select
-                        value={playbackRate}
-                        onChange={(e) => setPlaybackRate(Number(e.target.value))}
-                        className="bg-transparent border-0 text-white focus:outline-none"
-                        aria-label="Playback speed"
-                      >
-                        {[0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
-                          <option key={rate} value={rate} className="text-amber-900">
-                            {rate}x
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      onClick={toggleFullscreen}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
-                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    >
-                      {isFullscreen ? (
-                        <Minimize2 className="w-4 h-4" />
-                      ) : (
-                        <Maximize2 className="w-4 h-4" />
-                      )}
-                    </button>
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent text-white">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <input
+                          type="range"
+                          min={0}
+                          max={duration || 0}
+                          step={0.1}
+                          value={Math.min(currentTime, duration || 0)}
+                          onChange={(event) => handleSeek(Number(event.target.value))}
+                          className="w-full accent-amber-300"
+                          aria-label="Video progress"
+                          disabled={!duration}
+                        />
+                        <div className="flex items-center justify-between text-xs text-white/80">
+                          <span>{formatTime(currentTime)}</span>
+                          <span>{formatTime(duration)}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+                        <button
+                          onClick={togglePlay}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                          aria-label={isPlaying ? "Pause video" : "Play video"}
+                        >
+                          {isPlaying ? (
+                            <Pause className="w-4 h-4" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => skip(-10)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                          aria-label="Rewind 10 seconds"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => skip(10)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                          aria-label="Forward 10 seconds"
+                        >
+                          <RotateCw className="w-4 h-4" />
+                        </button>
+                        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition">
+                          <Timer className="w-4 h-4" />
+                          <select
+                            value={playbackRate}
+                            onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                            className="bg-transparent border-0 text-white focus:outline-none"
+                            aria-label="Playback speed"
+                          >
+                            {[0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                              <option key={rate} value={rate} className="text-amber-900">
+                                {rate}x
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          onClick={toggleFullscreen}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
+                          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                        >
+                          {isFullscreen ? (
+                            <Minimize2 className="w-4 h-4" />
+                          ) : (
+                            <Maximize2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
