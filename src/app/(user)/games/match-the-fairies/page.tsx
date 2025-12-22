@@ -124,6 +124,45 @@ const buildDeck = (levelId: number, pairCount: number) => {
   return shuffle(cards);
 };
 
+const FairyAvatar = ({
+  fairy,
+  size = "lg",
+  showWings = true,
+}: {
+  fairy: Fairy;
+  size?: "sm" | "lg";
+  showWings?: boolean;
+}) => {
+  const base = size === "lg" ? "h-16 w-16" : "h-10 w-10";
+  const wing = size === "lg" ? "h-8 w-5" : "h-6 w-4";
+  const core = size === "lg" ? "h-9 w-9 text-xs" : "h-7 w-7 text-[10px]";
+  return (
+    <div className={`relative ${base}`}>
+      {showWings && (
+        <>
+          <div
+            className={`absolute -left-2 top-3 ${wing} rounded-full bg-white/70 shadow-sm`}
+          />
+          <div
+            className={`absolute -right-2 top-3 ${wing} rounded-full bg-white/70 shadow-sm`}
+          />
+        </>
+      )}
+      <div
+        className={`relative ${base} rounded-2xl bg-gradient-to-br ${fairy.gradient} shadow-inner flex items-center justify-center`}
+      >
+        <div
+          className={`rounded-full ${core} bg-white/85 text-slate-700 font-semibold flex items-center justify-center`}
+        >
+          {fairy.symbol}
+        </div>
+        <span className="absolute -top-1 right-2 h-2 w-2 rounded-full bg-white/80" />
+        <span className="absolute bottom-2 left-2 h-1.5 w-1.5 rounded-full bg-white/70" />
+      </div>
+    </div>
+  );
+};
+
 export default function MatchTheFairiesPage() {
   useUserGuard();
   const { progress, loading, saving, saveLevel, unlocked } =
@@ -156,6 +195,8 @@ export default function MatchTheFairiesPage() {
     if (!activeLevel) return [];
     return getFairiesForLevel(activeLevel.id, activeLevel.pairCount);
   }, [activeLevel]);
+
+  const activeScene = activeLevel ? sceneById[activeLevel.sceneId] : null;
 
   const allMatched =
     Boolean(activeLevel) && matched.length === activeLevel?.pairCount;
@@ -305,54 +346,111 @@ export default function MatchTheFairiesPage() {
               </div>
             </div>
 
+            {activeScene && (
+              <div
+                className={`relative overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br ${activeScene.gradient} p-4`}
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.6),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.5),transparent_35%)] opacity-80" />
+                <div className="relative flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-600">
+                      Scene
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {activeScene.title}
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      {activeLevel.pairCount * 2} cards in this round
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Sparkles className="h-5 w-5" />
+                    <span className="text-xs font-semibold">Fairy magic</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2 text-xs text-slate-600">
               {activeFairies.map((fairy) => (
                 <span
                   key={fairy.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 overflow-visible"
                 >
                   <span
-                    className={`h-3 w-3 rounded-full bg-gradient-to-br ${fairy.gradient}`}
-                  />
-                  {fairy.name}
+                    className={`h-7 w-7 rounded-full bg-gradient-to-br ${fairy.gradient} p-1 shadow-sm`}
+                  >
+                    <span className="flex h-full w-full items-center justify-center rounded-full bg-white/90">
+                      <img
+                        src={`/images/symbol/${fairy.id}.svg`}
+                        alt={`${fairy.name} symbol`}
+                        className="h-4 w-4 object-contain"
+                        loading="lazy"
+                      />
+                    </span>
+                  </span>
+                  <span className="font-semibold">{fairy.name}</span>
                 </span>
               ))}
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-              {deck.map((card) => {
-                const fairy = fairyById.get(card.fairyId);
-                const isFlipped =
-                  flipped.includes(card.id) || matched.includes(card.fairyId);
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    onClick={() => handleCardClick(card.id)}
-                    className={`aspect-square rounded-2xl border shadow-sm transition ${
-                      isFlipped
-                        ? "bg-white border-rose-100"
-                        : "bg-rose-50 border-rose-200 hover:-translate-y-0.5"
-                    }`}
-                    aria-label={`Card for ${fairy?.name ?? "fairy"}`}
-                  >
-                    {isFlipped && fairy ? (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <div
-                          className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${fairy.gradient} text-white font-semibold flex flex-col items-center justify-center shadow`}
-                        >
-                          <span className="text-sm">{fairy.symbol}</span>
-                          <span className="text-[10px]">{fairy.name}</span>
+            <div
+              className={`relative overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br ${
+                activeScene?.gradient ?? "from-rose-50"
+              } p-4`}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.7),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(255,255,255,0.5),transparent_40%)] opacity-80" />
+              <div className="relative grid grid-cols-4 sm:grid-cols-5 gap-3">
+                {deck.map((card) => {
+                  const fairy = fairyById.get(card.fairyId);
+                  const isFlipped =
+                    flipped.includes(card.id) ||
+                    matched.includes(card.fairyId);
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => handleCardClick(card.id)}
+                      className={`group aspect-square rounded-2xl border shadow-sm transition ${
+                        isFlipped
+                          ? "bg-white border-rose-100"
+                          : "bg-white/70 border-rose-200 hover:-translate-y-0.5"
+                      }`}
+                      aria-label={`Card for ${fairy?.name ?? "fairy"}`}
+                    >
+                      {isFlipped && fairy ? (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                          <div
+                            className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${fairy.gradient} p-1 shadow`}
+                          >
+                            <div className="flex h-full w-full items-center justify-center rounded-2xl bg-white/90">
+                              <img
+                                src={`/images/symbol/${fairy.id}.svg`}
+                                alt={`${fairy.name} symbol`}
+                                className="h-10 w-10 object-contain"
+                                loading="lazy"
+                              />
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-semibold text-slate-700">
+                            {fairy.name}
+                          </span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-rose-300">
-                        ?
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                      ) : (
+                        <div className="relative flex h-full w-full items-center justify-center">
+                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/90 via-rose-50 to-amber-50" />
+                          <div className="relative flex flex-col items-center gap-1 text-rose-400">
+                            <Sparkles className="h-6 w-6" />
+                            <span className="text-[10px] font-semibold uppercase">
+                              Magic
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
