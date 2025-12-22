@@ -556,7 +556,10 @@ export default function SocialPage() {
         window.prompt("Copy this link", url);
       }
     } catch (err) {
-      console.error("Failed to copy link", err);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      console.error("Failed to share link", err);
     }
   };
 
