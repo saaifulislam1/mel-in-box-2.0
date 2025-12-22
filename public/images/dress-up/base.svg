@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="none">
+  <defs>
+    <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FAD9C8"/>
+      <stop offset="1" stop-color="#F6C4B2"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FDF2F8"/>
+      <stop offset="1" stop-color="#FCE7F3"/>
+    </linearGradient>
+  </defs>
+  <rect x="102" y="130" width="96" height="124" rx="36" fill="url(#skin)"/>
+  <rect x="78" y="140" width="28" height="110" rx="14" fill="url(#skin)"/>
+  <rect x="194" y="140" width="28" height="110" rx="14" fill="url(#skin)"/>
+  <rect x="118" y="248" width="28" height="106" rx="14" fill="url(#skin)"/>
+  <rect x="154" y="248" width="28" height="106" rx="14" fill="url(#skin)"/>
+  <rect x="128" y="112" width="44" height="26" rx="12" fill="url(#skin)"/>
+  <path d="M112 148 C124 132 176 132 188 148" fill="url(#dress)"/>
+  <rect x="112" y="148" width="76" height="88" rx="26" fill="url(#dress)"/>
+  <path d="M120 206 H180" stroke="#FBCFE8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="150" cy="78" r="42" fill="url(#skin)"/>
+  <circle cx="132" cy="80" r="10" fill="#FFFFFF"/>
+  <circle cx="168" cy="80" r="10" fill="#FFFFFF"/>
+  <circle cx="132" cy="82" r="4" fill="#3B2F2A"/>
+  <circle cx="168" cy="82" r="4" fill="#3B2F2A"/>
+  <path d="M124 70 C128 64 136 64 140 70" stroke="#3B2F2A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M160 70 C164 64 172 64 176 70" stroke="#3B2F2A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M140 96 C146 102 154 102 160 96" stroke="#D9827A" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="124" cy="92" r="6" fill="#F9A8D4" opacity="0.7"/>
+  <circle cx="176" cy="92" r="6" fill="#F9A8D4" opacity="0.7"/>
+  <circle cx="110" cy="54" r="3" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="196" cy="54" r="3" fill="#FFFFFF" opacity="0.8"/>
+</svg>

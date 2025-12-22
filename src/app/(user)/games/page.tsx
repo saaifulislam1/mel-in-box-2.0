@@ -29,6 +29,16 @@ const games: Game[] = [
     status: "Live",
   },
   {
+    id: "dress-up",
+    title: "Dress-Up Studio",
+    description: "Free play studio for endless outfits.",
+    difficulty: "Easy",
+    color: "from-pink-500 via-rose-500 to-amber-400",
+    icon: "👗",
+    href: "/games/dress-up",
+    status: "Live",
+  },
+  {
     id: "word-puzzle",
     title: "Word Puzzle",
     description: "Unscramble the letters to solve the clue.",

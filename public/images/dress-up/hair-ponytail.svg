@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="none">
+  <defs>
+    <mask id="face-cutout" maskUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="300" height="400" fill="white"/>
+      <circle cx="150" cy="78" r="34" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#face-cutout)">
+    <path d="M104 66 C112 38 132 24 150 24 C168 24 188 38 196 66 C202 86 196 104 184 118 C174 130 126 130 116 118 C104 104 98 86 104 66 Z" fill="#8B5E3C"/>
+    <path d="M122 70 C138 60 162 60 178 70" stroke="#A47452" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <path d="M106 98 C94 114 92 134 96 152" stroke="#8B5E3C" stroke-width="12" stroke-linecap="round"/>
+  <path d="M194 98 C206 114 208 134 204 152" stroke="#8B5E3C" stroke-width="12" stroke-linecap="round"/>
+  <path d="M190 86 C222 92 238 122 222 150 C210 176 176 184 170 154 C166 128 172 104 190 86 Z" fill="#7A4F32"/>
+</svg>
