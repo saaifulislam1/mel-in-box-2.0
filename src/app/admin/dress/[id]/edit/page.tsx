@@ -421,7 +421,7 @@ export default function EditCoursePage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
-                  className="text-slate-200"
+                  className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                 />
                 <p className="text-xs text-slate-400">
                   Upload to replace the existing thumbnail.
@@ -441,7 +441,7 @@ export default function EditCoursePage() {
                   type="file"
                   accept="video/*"
                   onChange={(e) => setPreviewFile(e.target.files?.[0] || null)}
-                  className="text-slate-200"
+                  className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                 />
                 <p className="text-xs text-slate-400">
                   Uploading replaces the preview video shown to users.
@@ -548,7 +548,7 @@ export default function EditCoursePage() {
                                   videoFile: e.target.files?.[0] || null,
                                 })
                               }
-                              className="text-slate-200"
+                              className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                             />
                             {lesson.videoURL && (
                               <p className="text-[11px] text-slate-300">

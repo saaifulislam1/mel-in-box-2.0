@@ -21,30 +21,13 @@ import {
   Timer,
   Users,
   Video,
-  X,
 } from "lucide-react";
 import HeadingSection from "@/components/HeadingSection";
-import { CourseSection, getCourseById } from "@/lib/courseService";
+import { CourseData, getCourseById } from "@/lib/courseService";
 import { useDressCart } from "@/hooks/useDressCart";
 import { useDressAccess } from "@/hooks/useDressAccess";
 
-type CoursePageData = {
-  id: string;
-  title: string;
-  description?: string;
-  price?: number;
-  duration?: string;
-  level?: string;
-  lessons?: number;
-  students?: number;
-  rating?: number;
-  tags?: string[];
-  highlights?: string[];
-  previewHeadline?: string;
-  thumbnailURL?: string;
-  previewURL?: string;
-  sections?: CourseSection[];
-};
+type CoursePageData = CourseData & { id: string };
 
 const formatPrice = (price?: number) =>
   typeof price === "number" ? `$${price.toFixed(2)}` : "$0.00";
@@ -86,9 +69,13 @@ export default function CourseDetailPage() {
         return;
       }
       const sections = Array.isArray(data.sections) ? data.sections : [];
-      const normalized = {
-        ...data,
+      const normalized: CoursePageData = {
+        id: data.id,
+        title: data.title ?? "Untitled course",
+        description: data.description ?? "",
         price: Number(data.price) || 0,
+        duration: data.duration ?? "45 mins",
+        level: data.level ?? "Beginner",
         lessons:
           Number(data.lessons) ||
           sections.reduce(
@@ -96,6 +83,13 @@ export default function CourseDetailPage() {
               count + (section.lessons ? section.lessons.length : 0),
             0
           ),
+        students: Number(data.students) || 0,
+        rating: data.rating ? Number(data.rating) : 4.9,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        highlights: Array.isArray(data.highlights) ? data.highlights : [],
+        previewHeadline: data.previewHeadline || "Preview this course",
+        thumbnailURL: data.thumbnailURL || "/images/mel-logo.png",
+        previewURL: data.previewURL || "",
         sections,
       };
       setCourse(normalized);
@@ -107,6 +101,8 @@ export default function CourseDetailPage() {
       setActiveLessonTitle(
         firstPreview?.title || data.previewHeadline || data.title || ""
       );
+      setCurrentTime(0);
+      setDuration(0);
       setLoading(false);
     };
     load();
@@ -165,11 +161,6 @@ export default function CourseDetailPage() {
   }, [playbackRate, activeLessonUrl]);
 
   useEffect(() => {
-    setCurrentTime(0);
-    setDuration(0);
-  }, [activeLessonUrl]);
-
-  useEffect(() => {
     const handler = () => {
       const fsElement =
         document.fullscreenElement ||
@@ -179,11 +170,11 @@ export default function CourseDetailPage() {
       setIsFullscreen(Boolean(fsElement));
     };
     document.addEventListener("fullscreenchange", handler);
-    // @ts-expect-error webkit fullscreen for Safari
+
     document.addEventListener("webkitfullscreenchange", handler);
     return () => {
       document.removeEventListener("fullscreenchange", handler);
-      // @ts-expect-error webkit fullscreen for Safari
+
       document.removeEventListener("webkitfullscreenchange", handler);
     };
   }, []);
@@ -525,6 +516,8 @@ export default function CourseDetailPage() {
                             if (!playable) return;
                             setActiveLessonUrl(lesson.videoURL || "");
                             setActiveLessonTitle(lesson.title);
+                            setCurrentTime(0);
+                            setDuration(0);
                           }}
                           className={`w-full text-left px-3 py-2 rounded-lg border text-sm flex items-center justify-between gap-2 ${
                             playable

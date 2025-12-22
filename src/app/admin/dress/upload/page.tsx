@@ -474,7 +474,7 @@ export default function UploadCoursePage() {
                                   videoFile: e.target.files?.[0] || null,
                                 })
                               }
-                              className="text-slate-200"
+                              className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                             />
                           </div>
                         </div>
@@ -494,7 +494,7 @@ export default function UploadCoursePage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
-                  className="text-slate-200"
+                  className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                 />
                 <p className="text-xs text-slate-400 mt-1">
                   Upload a bright 16:9 cover image.
@@ -511,7 +511,7 @@ export default function UploadCoursePage() {
                   type="file"
                   accept="video/*"
                   onChange={(e) => setPreviewFile(e.target.files?.[0] || null)}
-                  className="text-slate-200"
+                  className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-slate-200 file:mr-3 file:rounded-md file:border file:border-white/30 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-200 hover:file:bg-white/20"
                 />
                 <p className="text-xs text-slate-400 mt-1">
                   MP4 recommended. This clip is shown in the preview modal.
