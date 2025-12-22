@@ -2,8 +2,6 @@
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createPartyBooking, updatePartyBooking } from "@/lib/partyService";
-
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -22,42 +20,23 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
+      bookingId,
       packageId,
       packageName,
       packagePrice,
       partyDate,
       partyTime,
-      kidsExpected,
       location,
-      mapLink,
-      notes,
-      email: ownerEmail,
       contactEmail,
-      phone,
+      email: ownerEmail,
     } = body;
 
-    if (!packageId || !packageName || !packagePrice) {
+    if (!bookingId || !packageId || !packageName || !packagePrice) {
       return NextResponse.json(
-        { error: "Package information missing" },
+        { error: "Booking or package information missing" },
         { status: 400 }
       );
     }
-
-    const bookingRef = await createPartyBooking({
-      packageId,
-      packageName,
-      packagePrice,
-      partyDate: partyDate || "",
-      partyTime: partyTime || "",
-      kidsExpected: Number(kidsExpected) || 1,
-      location: location || "",
-      mapLink,
-      notes,
-      email: ownerEmail?.toLowerCase(),
-      contactEmail: contactEmail?.toLowerCase(),
-      phone,
-      status: "pending_payment",
-    });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -77,20 +56,16 @@ export async function POST(request: Request) {
           },
         },
       ],
-      success_url: `${baseUrl}/parties/success?bookingId=${bookingRef.id}`,
-      cancel_url: `${baseUrl}/parties/${packageId}/book?canceled=1`,
+      success_url: `${baseUrl}/parties/success?bookingId=${bookingId}`,
+      cancel_url: `${baseUrl}/parties/${packageId}/book?canceled=1&bookingId=${bookingId}`,
       metadata: {
-        bookingId: bookingRef.id,
+        bookingId,
         packageId,
       },
       customer_email: contactEmail || ownerEmail,
     });
 
-    await updatePartyBooking(bookingRef.id, {
-      stripeSessionId: session.id,
-    });
-
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url, sessionId: session.id });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error("Checkout error", err);

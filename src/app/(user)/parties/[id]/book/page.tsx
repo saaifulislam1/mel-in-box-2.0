@@ -4,7 +4,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getPartyPackage } from "@/lib/partyService";
+import {
+  createPartyBooking,
+  getPartyPackage,
+  updatePartyBooking,
+} from "@/lib/partyService";
 import { Spinner } from "@/components/Spinner";
 import {
   ArrowLeft,
@@ -74,22 +78,35 @@ export default function BookPartyPage() {
     setError(null);
     setSubmitting(true);
     try {
+      const bookingRef = await createPartyBooking({
+        userId: user.uid,
+        packageId: pkg.id,
+        packageName: pkg.name,
+        packagePrice: pkg.price,
+        partyDate,
+        partyTime,
+        kidsExpected,
+        location,
+        mapLink,
+        notes,
+        email: user.email,
+        contactEmail,
+        phone,
+        status: "pending_payment",
+      });
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          bookingId: bookingRef.id,
           packageId: pkg.id,
           packageName: pkg.name,
           packagePrice: pkg.price,
           partyDate,
           partyTime,
-          kidsExpected,
           location,
-          mapLink,
-          notes,
           email: user.email,
           contactEmail,
-          phone,
         }),
       });
       if (!res.ok) {
@@ -97,6 +114,11 @@ export default function BookPartyPage() {
         throw new Error(body.error || "Unable to start checkout");
       }
       const body = await res.json();
+      if (body?.sessionId) {
+        await updatePartyBooking(bookingRef.id, {
+          stripeSessionId: body.sessionId,
+        });
+      }
       if (body?.url) {
         window.location.href = body.url as string;
       } else {
