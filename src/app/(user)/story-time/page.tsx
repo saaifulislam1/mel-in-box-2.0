@@ -17,10 +17,12 @@ import {
   incrementViewCount,
   type VideoData,
 } from "@/lib/videoService";
+import { incrementStoryWatched } from "@/lib/userStatsService";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
 import Link from "next/link";
 import HeadingSection from "@/components/HeadingSection";
+import { useAuth } from "@/app/AuthProvider";
 
 type VideoItem = VideoData & {
   id: string;
@@ -43,6 +45,7 @@ const formatViews = (views: number) => {
 
 export default function StoryTimePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [selected, setSelected] = useState<VideoItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,6 +103,9 @@ export default function StoryTimePage() {
     setSelected(video);
     try {
       await incrementViewCount(video.id);
+      if (user) {
+        await incrementStoryWatched(user.uid);
+      }
       setVideos((prev) =>
         prev.map((v) =>
           v.id === video.id ? { ...v, views: (v.views ?? 0) + 1 } : v

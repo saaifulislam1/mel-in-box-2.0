@@ -1,7 +1,7 @@
 // src/lib/gameProgressService.ts
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export type GameProgress = {
   totalPoints: number;
@@ -13,6 +13,13 @@ export type GameProgress = {
 type GameProgressDoc = {
   games?: Record<string, GameProgress>;
   updatedAt?: unknown;
+};
+
+export type GameSummary = {
+  totalPoints: number;
+  totalLevelsCompleted: number;
+  totalGamesPlayed: number;
+  games: Record<string, GameProgress>;
 };
 
 const progressDoc = (userId: string) => doc(db, "gameProgress", userId);
@@ -82,4 +89,41 @@ export async function getTotalGamePoints(userId: string): Promise<number> {
     (sum, game) => sum + (game.totalPoints || 0),
     0
   );
+}
+
+export async function getGameSummary(userId: string): Promise<GameSummary> {
+  const snap = await getDoc(progressDoc(userId));
+  if (!snap.exists()) {
+    return {
+      totalPoints: 0,
+      totalLevelsCompleted: 0,
+      totalGamesPlayed: 0,
+      games: {},
+    };
+  }
+  const data = snap.data() as GameProgressDoc;
+  const games = data.games ?? {};
+  const values = Object.values(games);
+  const totalPoints = values.reduce(
+    (sum, game) => sum + (game.totalPoints || 0),
+    0
+  );
+  const totalLevelsCompleted = values.reduce(
+    (sum, game) => sum + (game.completedLevels?.length || 0),
+    0
+  );
+  const totalGamesPlayed = values.filter(
+    (game) => (game.completedLevels?.length || 0) > 0
+  ).length;
+
+  return {
+    totalPoints,
+    totalLevelsCompleted,
+    totalGamesPlayed,
+    games,
+  };
+}
+
+export async function deleteGameProgress(userId: string) {
+  await deleteDoc(progressDoc(userId));
 }

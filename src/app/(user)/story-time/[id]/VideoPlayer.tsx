@@ -6,9 +6,12 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { incrementViewCount } from "@/lib/videoService";
+import { incrementStoryWatched } from "@/lib/userStatsService";
+import { useAuth } from "@/app/AuthProvider";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function VideoPlayer({ id }: { id: string }) {
+  const { user } = useAuth();
   const [video, setVideo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,11 +34,14 @@ export default function VideoPlayer({ id }: { id: string }) {
 
     fetchVideo();
     incrementViewCount(id);
+    if (user) {
+      incrementStoryWatched(user.uid);
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [id, user]);
 
   if (loading) return <p className="p-6">Loading video...</p>;
   if (!video) return <p className="p-6">Video not found.</p>;
