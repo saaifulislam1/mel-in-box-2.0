@@ -29,6 +29,16 @@ const games: Game[] = [
     status: "Live",
   },
   {
+    id: "word-puzzle",
+    title: "Word Puzzle",
+    description: "Unscramble the letters to solve the clue.",
+    difficulty: "Medium",
+    color: "from-indigo-500 via-sky-500 to-blue-500",
+    icon: "🧩",
+    href: "/games/word-puzzle",
+    status: "Live",
+  },
+  {
     id: "spelling",
     title: "Spelling Adventure",
     description: "Guess the picture and spell it right.",
@@ -36,6 +46,16 @@ const games: Game[] = [
     color: "from-indigo-500 via-violet-500 to-blue-500",
     icon: "🔤",
     href: "/games/spelling",
+    status: "Live",
+  },
+  {
+    id: "match-the-fairies",
+    title: "Match the Fairies",
+    description: "Flip cards to find every fairy pair.",
+    difficulty: "Easy",
+    color: "from-rose-500 via-pink-500 to-fuchsia-500",
+    icon: "🧚",
+    href: "/games/match-the-fairies",
     status: "Live",
   },
   {
