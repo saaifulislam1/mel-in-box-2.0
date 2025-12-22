@@ -92,7 +92,8 @@ export default function CourseDetailPage() {
         lessons:
           Number(data.lessons) ||
           sections.reduce(
-            (count, section) => count + (section.lessons ? section.lessons.length : 0),
+            (count, section) =>
+              count + (section.lessons ? section.lessons.length : 0),
             0
           ),
         sections,
@@ -126,7 +127,10 @@ export default function CourseDetailPage() {
   const skip = useCallback((seconds: number) => {
     const video = videoRef.current;
     if (!video) return;
-    video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seconds));
+    video.currentTime = Math.max(
+      0,
+      Math.min(video.duration || 0, video.currentTime + seconds)
+    );
   }, []);
 
   const toggleFullscreen = useCallback(() => {
@@ -225,14 +229,17 @@ export default function CourseDetailPage() {
   if (loading || !course) {
     return (
       <main className="relative min-h-screen bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 text-amber-900 px-4 pb-16 pt-24">
-        <div className="relative max-w-6xl mx-auto">
-          <HeadingSection
-            href="/dress"
-            title="Dress Up Box"
-            textColor="text-amber-700"
-            icon={ShoppingBag}
-          />
-          <p className="mt-6 text-amber-700">Loading course...</p>
+        <div className="relative max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <HeadingSection
+              href="/dress"
+              title="Dress Up Box"
+              textColor="text-amber-700"
+              icon={ShoppingBag}
+            />
+
+            <p className="mt-6 text-amber-700">Loading course...</p>
+          </div>
         </div>
       </main>
     );
@@ -242,29 +249,13 @@ export default function CourseDetailPage() {
     <main className="relative min-h-screen bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 text-amber-900 px-4 pb-16 pt-24 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_30%)] pointer-events-none" />
       <div className="relative max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-amber-800 font-semibold shadow hover:-translate-y-0.5 transition border border-amber-100"
-            type="button"
-          >
-            ← Back
-          </button>
+        <div className="flex items-center  justify-start md:justify-center flex-wrap gap-3">
           <HeadingSection
             href="/dress"
             title={course.title}
             textColor="text-amber-700"
             icon={ShoppingBag}
           />
-          <button
-            onClick={() => router.push("/dress")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-amber-800 font-semibold shadow hover:-translate-y-0.5 transition border border-amber-100"
-            type="button"
-            aria-label="Close and return to Dress Up Box"
-          >
-            <X className="w-4 h-4" />
-            Close
-          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.9fr] gap-4 lg:gap-6">
@@ -305,7 +296,9 @@ export default function CourseDetailPage() {
                           max={duration || 0}
                           step={0.1}
                           value={Math.min(currentTime, duration || 0)}
-                          onChange={(event) => handleSeek(Number(event.target.value))}
+                          onChange={(event) =>
+                            handleSeek(Number(event.target.value))
+                          }
                           className="w-full accent-amber-300"
                           aria-label="Video progress"
                           disabled={!duration}
@@ -345,11 +338,17 @@ export default function CourseDetailPage() {
                           <Timer className="w-4 h-4" />
                           <select
                             value={playbackRate}
-                            onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                            onChange={(e) =>
+                              setPlaybackRate(Number(e.target.value))
+                            }
                             className="bg-transparent border-0 text-white focus:outline-none"
                           >
                             {[0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
-                              <option key={rate} value={rate} className="text-amber-900">
+                              <option
+                                key={rate}
+                                value={rate}
+                                className="text-amber-900"
+                              >
                                 {rate}x
                               </option>
                             ))}
@@ -358,7 +357,11 @@ export default function CourseDetailPage() {
                         <button
                           onClick={toggleFullscreen}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/15 text-white font-semibold hover:bg-white/25 transition"
-                          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                          aria-label={
+                            isFullscreen
+                              ? "Exit fullscreen"
+                              : "Enter fullscreen"
+                          }
                         >
                           {isFullscreen ? (
                             <Minimize2 className="w-4 h-4" />
@@ -385,7 +388,9 @@ export default function CourseDetailPage() {
                     {activeLessonTitle ? "Now playing" : "Course preview"}
                   </p>
                   <h3 className="text-lg font-semibold">
-                    {activeLessonTitle || course.previewHeadline || "Course preview"}
+                    {activeLessonTitle ||
+                      course.previewHeadline ||
+                      "Course preview"}
                   </h3>
                 </div>
               </div>
@@ -410,7 +415,9 @@ export default function CourseDetailPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs text-amber-500 uppercase">Course</p>
-                <h2 className="text-2xl font-bold text-amber-900">{course.title}</h2>
+                <h2 className="text-2xl font-bold text-amber-900">
+                  {course.title}
+                </h2>
                 <p className="text-sm text-amber-700">{course.description}</p>
               </div>
               {!owned && (
@@ -446,7 +453,8 @@ export default function CourseDetailPage() {
               </span>
               <span
                 className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl ${
-                  badges[course.level as keyof typeof badges] || "bg-amber-50 text-amber-700"
+                  badges[course.level as keyof typeof badges] ||
+                  "bg-amber-50 text-amber-700"
                 }`}
               >
                 Level: {course.level}
@@ -464,7 +472,8 @@ export default function CourseDetailPage() {
                   {isInCart(course.id) ? "In Cart" : "Add to Cart"}
                 </button>
                 <p className="text-xs text-amber-600 text-center">
-                  After purchase, all lessons unlock. Previews remain free for everyone.
+                  After purchase, all lessons unlock. Previews remain free for
+                  everyone.
                 </p>
               </div>
             ) : (
