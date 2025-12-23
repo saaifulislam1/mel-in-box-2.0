@@ -2,7 +2,6 @@
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getPartyBooking, updatePartyBooking } from "@/lib/partyService";
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 
@@ -19,7 +18,8 @@ export async function POST(request: Request) {
   });
 
   try {
-    const { bookingId } = await request.json();
+    const { bookingId, stripeSessionId, paymentIntentId } =
+      await request.json();
     if (!bookingId) {
       return NextResponse.json(
         { error: "bookingId is required" },
@@ -27,48 +27,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const booking = await getPartyBooking(bookingId);
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
-
-    if (!booking.stripeSessionId) {
-      await updatePartyBooking(bookingId, { status: "canceled" });
+    if (!stripeSessionId && !paymentIntentId) {
       return NextResponse.json({
         status: "canceled",
-        message: "Booking canceled (no Stripe session found)",
+        message: "Booking canceled (no Stripe session or payment intent).",
       });
     }
 
-    const session = await stripe.checkout.sessions.retrieve(
-      booking.stripeSessionId
-    );
-
-    if (!session.payment_intent) {
-      await updatePartyBooking(bookingId, { status: "canceled" });
+    let intentId = paymentIntentId;
+    if (!intentId && stripeSessionId) {
+      const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
+      if (!session.payment_intent) {
+        return NextResponse.json({
+          status: "canceled",
+          message: "Booking canceled (no payment intent found).",
+        });
+      }
+      intentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent.id;
+    }
+    if (!intentId) {
       return NextResponse.json({
         status: "canceled",
-        message: "Booking canceled (no payment intent found)",
+        message: "Booking canceled (missing payment intent).",
       });
     }
-
-    const paymentIntentId =
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent.id;
 
     const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
+      payment_intent: intentId,
       reason: "requested_by_customer",
-    });
-
-    await updatePartyBooking(bookingId, {
-      status: "canceled",
-      refundId: refund.id,
-      refundAmount: (refund.amount ?? 0) / 100,
-      refundStatus: refund.status,
-      refundedAt: new Date().toISOString(),
-      paymentIntentId,
     });
 
     return NextResponse.json({
@@ -76,6 +65,7 @@ export async function POST(request: Request) {
       refundId: refund.id,
       refundStatus: refund.status,
       refundAmount: (refund.amount ?? 0) / 100,
+      paymentIntentId: intentId,
     });
   } catch (err) {
     console.error("Cancel booking error", err);

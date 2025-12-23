@@ -8,7 +8,7 @@ import Link from "next/link";
 import { CalendarClock, Mail, Shield, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
-import { getSpellingProgress } from "@/lib/spellingService";
+import { getTotalGamePoints } from "@/lib/gameProgressService";
 
 export default function UserProfilePage() {
   useUserGuard();
@@ -28,9 +28,9 @@ export default function UserProfilePage() {
     const loadPoints = async () => {
       if (!user) return;
       try {
-        const data = await getSpellingProgress(user.uid);
+        const total = await getTotalGamePoints(user.uid);
         if (!mounted) return;
-        setGamePoints(data?.totalPoints ?? 0);
+        setGamePoints(total);
       } catch (err) {
         console.error("Failed to load game points", err);
       }

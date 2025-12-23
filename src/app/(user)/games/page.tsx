@@ -13,18 +13,145 @@ type Game = {
   difficulty: "Easy" | "Medium" | "Hard";
   color: string;
   icon: string;
+  href?: string;
+  status?: "Live" | "Coming soon";
 };
 
 const games: Game[] = [
-  { id: "spelling-adventure", title: "Spelling Adventure", description: "Guess the picture and spell it right.", difficulty: "Medium", color: "from-indigo-500 via-violet-500 to-blue-500", icon: "🔤" },
-  { id: "puzzle-paradise", title: "Puzzle Paradise", description: "Solve colorful puzzles!", difficulty: "Easy", color: "from-fuchsia-500 via-violet-500 to-blue-500", icon: "🧩" },
-  { id: "memory-match", title: "Memory Match", description: "Match the cards!", difficulty: "Medium", color: "from-teal-400 via-sky-400 to-blue-500", icon: "🃏" },
-  { id: "rainbow-colors", title: "Rainbow Colors", description: "Color magical pictures!", difficulty: "Easy", color: "from-rose-500 via-pink-500 to-orange-400", icon: "🎨" },
-  { id: "number-quest", title: "Number Quest", description: "Learn numbers with fun!", difficulty: "Easy", color: "from-amber-400 via-orange-400 to-amber-500", icon: "🔢" },
-  { id: "shape-safari", title: "Shape Safari", description: "Discover amazing shapes!", difficulty: "Easy", color: "from-purple-500 via-fuchsia-500 to-pink-500", icon: "🔺" },
-  { id: "music-maker", title: "Music Maker", description: "Create beautiful music!", difficulty: "Medium", color: "from-cyan-400 via-sky-400 to-blue-500", icon: "🎵" },
-  { id: "animal-friends", title: "Animal Friends", description: "Meet cute animals!", difficulty: "Easy", color: "from-emerald-500 via-green-500 to-teal-500", icon: "🦁" },
-  { id: "treasure-hunt", title: "Treasure Hunt", description: "Find hidden treasures!", difficulty: "Hard", color: "from-orange-500 via-amber-500 to-yellow-400", icon: "🏴‍☠️" },
+  {
+    id: "spot-the-difference",
+    title: "Spot the Difference",
+    description: "Find the sneaky changes between two scenes.",
+    difficulty: "Easy",
+    color: "from-rose-500 via-orange-400 to-amber-400",
+    icon: "🔍",
+    href: "/games/spot-the-difference",
+    status: "Live",
+  },
+  {
+    id: "dress-up",
+    title: "Dress-Up Studio",
+    description: "Free play studio for endless outfits.",
+    difficulty: "Easy",
+    color: "from-pink-500 via-rose-500 to-amber-400",
+    icon: "👗",
+    href: "/games/dress-up",
+    status: "Live",
+  },
+  {
+    id: "word-puzzle",
+    title: "Word Puzzle",
+    description: "Unscramble the letters to solve the clue.",
+    difficulty: "Medium",
+    color: "from-indigo-500 via-sky-500 to-blue-500",
+    icon: "🧩",
+    href: "/games/word-puzzle",
+    status: "Live",
+  },
+  {
+    id: "spelling",
+    title: "Spelling Adventure",
+    description: "Guess the picture and spell it right.",
+    difficulty: "Medium",
+    color: "from-indigo-500 via-violet-500 to-blue-500",
+    icon: "🔤",
+    href: "/games/spelling",
+    status: "Live",
+  },
+  {
+    id: "match-the-fairies",
+    title: "Match the Fairies",
+    description: "Flip cards to find every fairy pair.",
+    difficulty: "Easy",
+    color: "from-rose-500 via-pink-500 to-fuchsia-500",
+    icon: "🧚",
+    href: "/games/match-the-fairies",
+    status: "Live",
+  },
+  {
+    id: "puzzle-paradise",
+    title: "Puzzle Paradise",
+    description: "Solve colorful puzzles!",
+    difficulty: "Easy",
+    color: "from-fuchsia-500 via-violet-500 to-blue-500",
+    icon: "🧩",
+    status: "Coming soon",
+  },
+  {
+    id: "memory-match",
+    title: "Memory Match",
+    description: "Match the cards!",
+    difficulty: "Medium",
+    color: "from-teal-400 via-sky-400 to-blue-500",
+    icon: "🃏",
+    status: "Coming soon",
+  },
+  {
+    id: "coloring",
+    title: "Coloring Corner",
+    description: "Fill each shape with the color key.",
+    difficulty: "Easy",
+    color: "from-emerald-500 via-lime-400 to-sky-400",
+    icon: "🎨",
+    href: "/games/coloring",
+    status: "Live",
+  },
+  {
+    id: "painting",
+    title: "Painting Party",
+    description: "Draw with brushes and color your own scene.",
+    difficulty: "Medium",
+    color: "from-rose-500 via-pink-500 to-amber-400",
+    icon: "🖌️",
+    href: "/games/painting",
+    status: "Live",
+  },
+  {
+    id: "counting",
+    title: "Counting Quest",
+    description: "Count the shapes and choose the answer.",
+    difficulty: "Easy",
+    color: "from-cyan-500 via-sky-400 to-amber-400",
+    icon: "🔢",
+    href: "/games/counting",
+    status: "Live",
+  },
+  {
+    id: "shape-safari",
+    title: "Shape Safari",
+    description: "Discover amazing shapes!",
+    difficulty: "Easy",
+    color: "from-purple-500 via-fuchsia-500 to-pink-500",
+    icon: "🔺",
+    status: "Coming soon",
+  },
+  {
+    id: "music-maker",
+    title: "Music Maker",
+    description: "Create beautiful music!",
+    difficulty: "Medium",
+    color: "from-cyan-400 via-sky-400 to-blue-500",
+    icon: "🎵",
+    status: "Coming soon",
+  },
+  {
+    id: "animal-friends",
+    title: "Animal Friends",
+    description: "Meet cute animals!",
+    difficulty: "Easy",
+    color: "from-emerald-500 via-green-500 to-teal-500",
+    icon: "🦁",
+    status: "Coming soon",
+  },
+  {
+    id: "treasure-hunt",
+    title: "Treasure Hunt",
+    description: "Find hidden treasures!",
+    difficulty: "Hard",
+    color: "from-orange-500 via-amber-500 to-yellow-400",
+    icon: "🏴‍☠️",
+    status: "Coming soon",
+  },
 ];
 
 const difficultyStyle = {
@@ -84,13 +211,19 @@ export default function GamesPage() {
                   <Star className="w-4 h-4" />
                   <span>Kid-friendly</span>
                 </div>
-                <a
-                  href={`/games/${game.id}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-rose-700 font-semibold shadow hover:-translate-y-0.5 transition"
-                >
-                  <Play className="w-4 h-4" />
-                  Play now
-                </a>
+                {game.href ? (
+                  <a
+                    href={game.href}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-rose-700 font-semibold shadow hover:-translate-y-0.5 transition"
+                  >
+                    <Play className="w-4 h-4" />
+                    Play now
+                  </a>
+                ) : (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-slate-700 font-semibold">
+                    {game.status ?? "Coming soon"}
+                  </span>
+                )}
               </div>
             </article>
           ))}

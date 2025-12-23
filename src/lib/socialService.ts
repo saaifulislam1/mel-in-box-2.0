@@ -77,16 +77,19 @@ export async function createSocialPost(data: SocialPost) {
 export async function getSocialPosts(
   pageSize = 5,
   cursor?: unknown
-): Promise<{ posts: any[]; nextCursor: unknown }> {
+): Promise<{ posts: (SocialPost & { id: string })[]; nextCursor: unknown }> {
   let q = query(postsCol, orderBy("createdAt", "desc"), limit(pageSize));
   if (cursor) {
     q = query(postsCol, orderBy("createdAt", "desc"), startAfter(cursor), limit(pageSize));
   }
   const snap = await getDocs(q);
-  const docs = snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  const docs = snap.docs.map(
+    (d) =>
+      ({
+        id: d.id,
+        ...(d.data() as SocialPost),
+      } as SocialPost & { id: string })
+  );
   const nextCursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1].data().createdAt : null;
   return { posts: docs, nextCursor };
 }

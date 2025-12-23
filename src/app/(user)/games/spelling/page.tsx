@@ -4,13 +4,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import HeadingSection from "@/components/HeadingSection";
-import { useAuth } from "@/app/AuthProvider";
 import useUserGuard from "@/hooks/useUserGuard";
-import {
-  getSpellingProgress,
-  saveSpellingLevel,
-  type SpellingProgress,
-} from "@/lib/spellingService";
+import { useGameProgress } from "@/hooks/useGameProgress";
+import CelebrationOverlay from "@/components/CelebrationOverlay";
+import { useCelebration } from "@/hooks/useCelebration";
 import { BookOpen, PartyPopper, Play, Timer } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 
@@ -207,6 +204,8 @@ const levels: Level[] = [
   },
 ];
 
+const GAME_ID = "spelling";
+
 const difficultyPill: Record<Level["difficulty"], string> = {
   Easy: "bg-emerald-100 text-emerald-700",
   Medium: "bg-amber-100 text-amber-700",
@@ -215,14 +214,13 @@ const difficultyPill: Record<Level["difficulty"], string> = {
 
 export default function SpellingGamePage() {
   useUserGuard();
-  const { user } = useAuth();
-  const [progress, setProgress] = useState<SpellingProgress | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { progress, loading, saving, saveLevel, unlocked } =
+    useGameProgress(GAME_ID);
+  const { isCelebrating, message, celebrate } = useCelebration();
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [input, setInput] = useState("");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const gradient = useMemo(
     () =>
@@ -231,28 +229,7 @@ export default function SpellingGamePage() {
   );
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      if (!user) return;
-      try {
-        const data = await getSpellingProgress(user.uid);
-        if (!mounted) return;
-        if (data) setProgress(data);
-      } catch (err) {
-        console.error("Failed to load spelling progress", err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
-
-  useEffect(() => {
     if (!activeLevel) return;
-    setSecondsLeft(activeLevel.timeLimit);
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev === null) return prev;
@@ -271,42 +248,29 @@ export default function SpellingGamePage() {
   const handleStart = (level: Level) => {
     setFeedback(null);
     setInput("");
+    setSecondsLeft(level.timeLimit);
     setActiveLevel(level);
   };
 
   const handleSubmit = async () => {
-    if (!user || !activeLevel) return;
+    if (!activeLevel) return;
     const correct =
       input.trim().toLowerCase() === activeLevel.word.toLowerCase();
     if (!correct) {
       setFeedback("Oops, check your spelling and try again!");
-      setActiveLevel(null);
+      setInput("");
       return;
     }
-    setSaving(true);
-    try {
-      const updated = await saveSpellingLevel(
-        user.uid,
-        activeLevel.id,
-        activeLevel.points
-      );
-      setProgress(updated);
+    const updated = await saveLevel(activeLevel.id, activeLevel.points);
+    if (updated) {
+      celebrate(`Great job! +${activeLevel.points} points`);
       setFeedback(`Great job! You earned ${activeLevel.points} points.`);
-    } catch (err) {
-      console.error("Failed to save level", err);
+    } else {
       setFeedback("Could not save your score. Try again.");
-    } finally {
-      setSaving(false);
-      setActiveLevel(null);
-      setInput("");
-      setSecondsLeft(null);
     }
-  };
-
-  const unlocked = (levelId: number) => {
-    if (!progress) return levelId === 1;
-    const maxCompleted = Math.max(0, ...progress.completedLevels);
-    return levelId <= maxCompleted + 1;
+    setActiveLevel(null);
+    setInput("");
+    setSecondsLeft(null);
   };
 
   return (
@@ -337,7 +301,7 @@ export default function SpellingGamePage() {
             <div className="text-right text-xs text-slate-500">
               <p>Levels done</p>
               <p className="font-semibold text-slate-800">
-                {(progress?.completedLevels?.length ?? 0)}/18
+                {progress?.completedLevels?.length ?? 0}/18
               </p>
             </div>
           </div>
@@ -372,7 +336,7 @@ export default function SpellingGamePage() {
                             Level {lvl.id}
                           </p>
                           <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                            {lvl.word}
+                            {lvl.clue}
                             <span
                               className={`px-2 py-1 rounded-full text-[11px] ${
                                 difficultyPill[lvl.difficulty]
@@ -481,9 +445,15 @@ export default function SpellingGamePage() {
                 {saving ? <Spinner label="Saving..." /> : "Submit"}
               </button>
             </div>
+            {feedback && (
+              <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-indigo-700">
+                {feedback}
+              </div>
+            )}
           </div>
         </div>
       )}
+      <CelebrationOverlay isOpen={isCelebrating} message={message} />
     </main>
   );
 }
